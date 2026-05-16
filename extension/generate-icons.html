@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate Prompt Coach Icons</title></head>
+<body style="background:#1a1a1a;color:#fff;font-family:system-ui;padding:40px;text-align:center">
+  <h1>Prompt Coach Icon Generator</h1>
+  <p>Right-click each image below and "Save Image As" to the <code>icons/</code> folder.</p>
+  <div style="display:flex;gap:40px;justify-content:center;margin-top:30px;align-items:end">
+    <div>
+      <canvas id="c16" width="16" height="16"></canvas>
+      <p>icon16.png</p>
+    </div>
+    <div>
+      <canvas id="c48" width="48" height="48"></canvas>
+      <p>icon48.png</p>
+    </div>
+    <div>
+      <canvas id="c128" width="128" height="128"></canvas>
+      <p>icon128.png</p>
+    </div>
+  </div>
+  <script>
+    function drawWhistle(ctx, s) {
+      ctx.clearRect(0, 0, s, s);
+      const f = s / 100;
+
+      // Background circle
+      ctx.beginPath();
+      ctx.arc(s/2, s/2, s/2 - f, 0, Math.PI * 2);
+      ctx.fillStyle = '#1B6B3E';
+      ctx.fill();
+
+      // Whistle body
+      ctx.beginPath();
+      ctx.roundRect(10*f, 35*f, 60*f, 30*f, 12*f);
+      ctx.fillStyle = '#D4D4D8';
+      ctx.fill();
+
+      // Mouthpiece
+      ctx.beginPath();
+      ctx.roundRect(65*f, 42*f, 25*f, 16*f, 5*f);
+      ctx.fillStyle = '#B4B4BA';
+      ctx.fill();
+
+      // Sound hole
+      ctx.beginPath();
+      ctx.ellipse(12*f, 50*f, 3*f, 5*f, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#555';
+      ctx.fill();
+
+      // Left eye
+      ctx.beginPath();
+      ctx.ellipse(35*f, 49*f, 7*f, 8*f, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(37*f, 49*f, 4.5*f, 0, Math.PI * 2);
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(38*f, 47*f, 1.8*f, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+
+      // Right eye
+      ctx.beginPath();
+      ctx.ellipse(53*f, 49*f, 7*f, 8*f, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(55*f, 49*f, 4.5*f, 0, Math.PI * 2);
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(56*f, 47*f, 1.8*f, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+    }
+
+    [16, 48, 128].forEach(size => {
+      const canvas = document.getElementById('c' + size);
+      const ctx = canvas.getContext('2d');
+      drawWhistle(ctx, size);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+/* ==========================================================================
+   Prompt Coach — Injected Styles
+   All rules use !important + pc- namespace to avoid host-page conflicts.
+   ========================================================================== */
+
+/* ---- Mascot ---- */
+.pc-mascot {
+  position: absolute !important;
+  bottom: 8px !important;
+  right: 56px !important;
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer !important;
+  opacity: 0.6 !important;
+  transition: opacity .25s, transform .25s !important;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.15)) !important;
+}
+.pc-mascot:hover { opacity: 1 !important; transform: scale(1.12) !important; }
+.pc-active.pc-mascot { opacity: 0.85 !important; }
+
+/* Mascot states */
+.pc-coaching .pc-whistle-svg { animation: pc-bounce .6s ease-in-out infinite !important; }
+@keyframes pc-bounce {
+  0%,100% { transform: translateY(0) }
+  50%     { transform: translateY(-5px) }
+}
+
+/* ---- Score gauge ---- */
+.pc-score-gauge {
+  position: relative !important;
+  width: 30px !important;
+  height: 30px !important;
+}
+.pc-score-ring { width: 30px !important; height: 30px !important; transform: rotate(-90deg) !important; }
+.pc-score-bg  { fill: none !important; stroke: rgba(255,255,255,.12) !important; stroke-width: 3.5 !important; }
+.pc-score-fill {
+  fill: none !important;
+  stroke: #6B7280 !important;
+  stroke-width: 3.5 !important;
+  stroke-linecap: round !important;
+  transition: stroke-dasharray .5s ease, stroke .3s ease !important;
+}
+.pc-score-text {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font: 700 9px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  color: #d1d5db !important;
+  pointer-events: none !important;
+}
+
+/* ---- Panel (slides in from right) ---- */
+.pc-panel {
+  position: fixed !important;
+  top: 0 !important; right: 0 !important;
+  width: 420px !important; height: 100vh !important;
+  z-index: 100000 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  animation: pc-slide .3s ease-out !important;
+}
+@keyframes pc-slide { from { transform: translateX(100%) } to { transform: translateX(0) } }
+
+.pc-panel-inner {
+  height: 100% !important;
+  overflow-y: auto !important;
+  background: #111214 !important;
+  border-left: 2px solid #1B6B3E !important;
+  padding: 24px 20px !important;
+  box-shadow: -6px 0 24px rgba(0,0,0,.5) !important;
+  color: #e5e7eb !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+}
+
+/* Header */
+.pc-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 16px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid rgba(255,255,255,.08) !important;
+}
+.pc-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font: 700 16px/1.2 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  color: #fff !important;
+}
+.pc-close {
+  all: unset !important;
+  cursor: pointer !important;
+  font-size: 22px !important;
+  color: #6b7280 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  line-height: 1 !important;
+}
+.pc-close:hover { background: rgba(255,255,255,.08) !important; color: #fff !important; }
+
+/* Coach quote */
+.pc-says {
+  background: rgba(27,107,62,.12) !important;
+  border-left: 3px solid #1B6B3E !important;
+  padding: 12px 14px !important;
+  margin-bottom: 20px !important;
+  border-radius: 0 8px 8px 0 !important;
+  font-style: italic !important;
+  color: #a7f3d0 !important;
+}
+
+/* Score bars */
+.pc-scores { margin-bottom: 12px !important; }
+.pc-row {
+  display: grid !important;
+  grid-template-columns: 78px 1fr 32px !important;
+  gap: 4px 8px !important;
+  align-items: center !important;
+  margin-bottom: 6px !important;
+}
+.pc-label {
+  font: 600 11px/1 -apple-system, sans-serif !important;
+  color: #9ca3af !important;
+  text-transform: uppercase !important;
+  letter-spacing: .5px !important;
+}
+.pc-track {
+  height: 5px !important;
+  background: rgba(255,255,255,.08) !important;
+  border-radius: 3px !important;
+  overflow: hidden !important;
+}
+.pc-fill {
+  height: 100% !important;
+  border-radius: 3px !important;
+  transition: width .4s ease !important;
+}
+.pc-good { background: #22c55e !important; }
+.pc-ok   { background: #f59e0b !important; }
+.pc-weak { background: #ef4444 !important; }
+.pc-val {
+  font: 700 11px/1 -apple-system, sans-serif !important;
+  text-align: right !important;
+  color: #d1d5db !important;
+}
+.pc-fb {
+  grid-column: 1 / -1 !important;
+  font-size: 11px !important;
+  color: #6b7280 !important;
+  padding-bottom: 2px !important;
+}
+
+/* Overall */
+.pc-overall {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 14px !important;
+  background: rgba(255,255,255,.04) !important;
+  border-radius: 8px !important;
+  margin-bottom: 16px !important;
+}
+.pc-overall-lbl {
+  font: 700 13px/1 -apple-system, sans-serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  color: #9ca3af !important;
+}
+.pc-overall-num {
+  font: 800 26px/1 -apple-system, sans-serif !important;
+  padding: 4px 12px !important;
+  border-radius: 6px !important;
+  color: #fff !important;
+}
+.pc-overall-num.pc-good { background: rgba(34,197,94,.2) !important; }
+.pc-overall-num.pc-ok   { background: rgba(245,158,11,.2) !important; }
+.pc-overall-num.pc-weak { background: rgba(239,68,68,.2) !important; }
+
+/* Model tip */
+.pc-tip {
+  background: rgba(59,130,246,.08) !important;
+  border: 1px solid rgba(59,130,246,.18) !important;
+  padding: 10px 12px !important;
+  border-radius: 8px !important;
+  margin-bottom: 16px !important;
+  font-size: 13px !important;
+  color: #93c5fd !important;
+}
+
+/* Section headings */
+.pc-sec {
+  font: 700 11px/1 -apple-system, sans-serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  color: #6b7280 !important;
+  margin-bottom: 8px !important;
+}
+
+/* Highlights */
+.pc-hls { margin-bottom: 16px !important; }
+.pc-hl {
+  background: rgba(255,255,255,.02) !important;
+  border: 1px solid rgba(255,255,255,.06) !important;
+  border-radius: 6px !important;
+  padding: 10px !important;
+  margin-bottom: 6px !important;
+}
+.pc-hl-orig  { font-style: italic !important; color: #9ca3af !important; font-size: 12px !important; margin-bottom: 4px !important; }
+.pc-hl-issue { color: #fca5a5 !important; font-size: 12px !important; margin-bottom: 2px !important; }
+.pc-hl-issue::before { content: '\25B2 ' !important; font-size: 8px !important; }
+.pc-hl-fix   { color: #86efac !important; font-size: 12px !important; }
+.pc-hl-fix::before   { content: '\2192 ' !important; }
+
+/* Improved prompt */
+.pc-improved { margin-bottom: 20px !important; }
+.pc-improved-text {
+  background: rgba(27,107,62,.06) !important;
+  border: 1px solid rgba(27,107,62,.18) !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  white-space: pre-wrap !important;
+  margin-bottom: 12px !important;
+  color: #e5e7eb !important;
+}
+.pc-actions { display: flex !important; gap: 8px !important; }
+.pc-copy, .pc-use {
+  all: unset !important;
+  cursor: pointer !important;
+  padding: 8px 16px !important;
+  border-radius: 6px !important;
+  font: 600 13px/1 -apple-system, sans-serif !important;
+  transition: background .2s !important;
+}
+.pc-copy {
+  background: rgba(255,255,255,.08) !important;
+  color: #e5e7eb !important;
+}
+.pc-copy:hover { background: rgba(255,255,255,.14) !important; }
+.pc-use {
+  background: #1B6B3E !important;
+  color: #fff !important;
+}
+.pc-use:hover { background: #228b4f !important; }
+
+/* Loading dots */
+.pc-loading {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 48px 0 !important;
+}
+.pc-loading span {
+  width: 10px !important; height: 10px !important;
+  background: #1B6B3E !important;
+  border-radius: 50% !important;
+  animation: pc-dot 1.4s ease-in-out infinite both !important;
+}
+.pc-loading span:nth-child(2) { animation-delay: .16s !important; }
+.pc-loading span:nth-child(3) { animation-delay: .32s !important; }
+@keyframes pc-dot {
+  0%,80%,100% { transform: scale(0) }
+  40%         { transform: scale(1) }
+}
+
+/* Error */
+.pc-error {
+  background: rgba(239,68,68,.08) !important;
+  border: 1px solid rgba(239,68,68,.18) !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  color: #fca5a5 !important;
+}
+
+/* Toast */
+.pc-toast {
+  position: fixed !important;
+  bottom: 24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(16px) !important;
+  background: #111214 !important;
+  color: #e5e7eb !important;
+  padding: 10px 22px !important;
+  border-radius: 8px !important;
+  font: 500 13px/1.4 -apple-system, sans-serif !important;
+  border: 1px solid #1B6B3E !important;
+  z-index: 200000 !important;
+  opacity: 0 !important;
+  transition: opacity .25s, transform .25s !important;
+  pointer-events: none !important;
+}
+.pc-toast-on {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) !important;
+}
