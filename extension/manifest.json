@@ -3,7 +3,7 @@
   "name": "Prompt Coach",
   "description": "Your AI prompting sideline coach — real-time feedback, scoring, and model-specific advice for every prompt you write.",
   "version": "0.1.0",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "storage", "tabs"],
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",

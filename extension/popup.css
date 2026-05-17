@@ -146,3 +146,12 @@ kbd {
   font-size: 11px;
   font-weight: 600;
 }
+
+/* Toggle rows */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+.toggle-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e5e7eb; cursor: pointer; }
+.toggle-label input[type="checkbox"] { accent-color: #1B6B3E; width: 16px; height: 16px; }
+
+/* Journal */
+.journal-stat { font-size: 13px; color: #9ca3af; margin-bottom: 10px; }
+.journal-stat span { font: 700 20px/1 -apple-system, sans-serif; color: #1B6B3E; margin-right: 4px; }

@@ -122,6 +122,14 @@ function quickScore(text) {
   if (len > 100) score += 3;
   if (len > 200) score += 3;
   if (len > 500) score += 4;
+
+  // Efficiency: filler word detection
+  const filler = ['please','kindly','basically','actually','really','very','just','simply',
+    'i would like you to','if you could','would you be able to'];
+  const fillerCount = filler.filter(s => lower.includes(s)).length;
+  if (fillerCount === 0) score += 10;
+  if (len > 500 && !fmt.some(s => lower.includes(s))) score -= 5;
+
   return Math.min(score, 100);
 }
 
@@ -380,10 +388,15 @@ class PromptCoach {
         </svg>
         <span class="pc-score-text">—</span>
       </div>
+      <div class="pc-token-count">
+        <span class="pc-token-num">—</span>
+        <span class="pc-token-label">tok</span>
+      </div>
       <div class="pc-widget-status">
         <span class="pc-status-dot"></span>
         <span class="pc-status-label">Watching</span>
-      </div>`;
+      </div>
+      <span class="pc-session-badge" style="display:none">0</span>`;
 
     // Entire widget is clickable
     this.widgetEl.addEventListener('click', (e) => {
@@ -394,6 +407,14 @@ class PromptCoach {
 
     document.body.appendChild(this.widgetEl);
     setTimeout(() => this.widgetEl?.classList.remove('pc-widget-entrance'), 800);
+
+    // Load journal badge count
+    chrome.runtime.sendMessage({ type: 'GET_JOURNAL_COUNT' }, (resp) => {
+      if (resp?.count > 0) {
+        const badge = this.widgetEl?.querySelector('.pc-session-badge');
+        if (badge) { badge.textContent = resp.count; badge.style.display = ''; }
+      }
+    });
   }
 
   // ---- Polling-based scoring ----
@@ -408,6 +429,10 @@ class PromptCoach {
       this.updateScore(score);
       this.updateStatus(score);
 
+      const tokenEst = Math.ceil(text.length / 4);
+      const tokenNum = this.widgetEl?.querySelector('.pc-token-num');
+      if (tokenNum) tokenNum.textContent = tokenEst > 0 ? tokenEst : '—';
+
       if (!this.hintShown.typing && this.onboarding.done) {
         this.showContextualHint('typing');
         this.hintShown.typing = true;
@@ -419,6 +444,8 @@ class PromptCoach {
     } else {
       this.updateScore(0);
       this.updateStatus(0);
+      const tokenNum = this.widgetEl?.querySelector('.pc-token-num');
+      if (tokenNum) tokenNum.textContent = '—';
     }
   }
 
@@ -475,6 +502,65 @@ class PromptCoach {
     setTimeout(() => { el.classList.remove('pc-hint-show'); setTimeout(() => el.remove(), 300); }, 5000);
   }
 
+  // ---- Intent Verification ----
+
+  showIntentCheck(intent) {
+    return new Promise((resolve, reject) => {
+      this.hidePanel();
+      this.panelEl = document.createElement('div');
+      this.panelEl.className = 'pc-panel';
+
+      const assumptions = (intent.assumptions || []).map(a => `<li>${esc(a)}</li>`).join('');
+
+      this.panelEl.innerHTML = this.shell('Pre-Game Check', `
+        <div class="pc-intent-card">
+          <div class="pc-intent-label">I think you want to:</div>
+          <div class="pc-intent-goal">"${esc(intent.goal_summary || '')}"</div>
+          ${assumptions ? `<div class="pc-intent-label">Assumptions I'm making:</div>
+          <ul class="pc-intent-assumptions">${assumptions}</ul>` : ''}
+        </div>
+        <div class="pc-intent-actions">
+          <button class="pc-intent-confirm">Yes, coach me!</button>
+          <button class="pc-intent-clarify-toggle">Actually, I want...</button>
+        </div>
+        <div class="pc-intent-clarify-area" style="display:none">
+          <textarea class="pc-intent-clarify-input" rows="3" placeholder="Tell me more about what you're actually looking for..."></textarea>
+          <button class="pc-intent-clarify-submit">Submit & Coach</button>
+        </div>`);
+
+      this.panelEl.querySelector('.pc-close')?.addEventListener('click', () => {
+        this.hidePanel();
+        reject(new Error('cancelled'));
+      });
+
+      this._escH = (e) => {
+        if (e.key === 'Escape') {
+          this.hidePanel();
+          reject(new Error('cancelled'));
+        }
+      };
+      document.addEventListener('keydown', this._escH);
+
+      this.panelEl.querySelector('.pc-intent-confirm').addEventListener('click', () => {
+        this.hidePanel();
+        resolve(null);
+      });
+
+      this.panelEl.querySelector('.pc-intent-clarify-toggle').addEventListener('click', () => {
+        const area = this.panelEl.querySelector('.pc-intent-clarify-area');
+        if (area) area.style.display = '';
+      });
+
+      this.panelEl.querySelector('.pc-intent-clarify-submit').addEventListener('click', () => {
+        const txt = this.panelEl.querySelector('.pc-intent-clarify-input')?.value?.trim() || '';
+        this.hidePanel();
+        resolve(txt || null);
+      });
+
+      document.body.appendChild(this.panelEl);
+    });
+  }
+
   // ---- Coach Me ----
 
   async coachMe() {
@@ -487,21 +573,82 @@ class PromptCoach {
 
     this.isCoaching = true;
     this.widgetEl?.classList.add('pc-widget-coaching');
-    this.showPanel({ loading: true });
 
     try {
+      // Check intent verification setting
+      const settings = await chrome.storage.sync.get(['intentCheck', 'conciseMode']);
+      const intentEnabled = settings.intentCheck !== false; // default true
+      const conciseMode = !!settings.conciseMode;
+
+      let clarification = null;
+
+      if (intentEnabled) {
+        // Step 1: Verify intent
+        this.showPanel({ loading: true });
+        const intentResp = await chrome.runtime.sendMessage({
+          type: 'VERIFY_INTENT',
+          prompt: text,
+          platform: this.platform.name,
+          model: this.platform.model
+        });
+
+        if (intentResp.error) {
+          this.showPanel({ error: intentResp.error });
+          return;
+        }
+
+        if (intentResp.intent) {
+          try {
+            clarification = await this.showIntentCheck(intentResp.intent);
+          } catch (e) {
+            // User cancelled
+            return;
+          }
+        }
+      }
+
+      // Step 2: Coach
+      this.showPanel({ loading: true });
+
       const resp = await chrome.runtime.sendMessage({
         type: 'COACH_ME',
         prompt: text,
         platform: this.platform.name,
-        model: this.platform.model
+        model: this.platform.model,
+        conciseMode: conciseMode,
+        clarification: clarification
       });
-      if (resp.error) this.showPanel({ error: resp.error });
-      else {
+
+      if (resp.error) {
+        this.showPanel({ error: resp.error });
+      } else {
         this.showPanel({ result: resp });
         if (!this.hintShown.firstCoach) {
           setTimeout(() => this.showContextualHint('firstCoach'), 1500);
           this.hintShown.firstCoach = true;
+        }
+
+        // Save journal entry
+        const entry = {
+          id: crypto.randomUUID(),
+          ts: Date.now(),
+          platform: this.platform.name,
+          model: this.platform.model,
+          promptText: text,
+          promptLength: text.length,
+          scores: Object.fromEntries(Object.entries(resp.scores || {}).map(([k, v]) => [k, v.score])),
+          overall: resp.overall_score,
+          takeaways: (resp.highlights || []).slice(0, 3).map(h => h.issue),
+          tokenEstimate: resp.token_estimate || Math.ceil(text.length / 4)
+        };
+        chrome.runtime.sendMessage({ type: 'SAVE_JOURNAL_ENTRY', entry });
+
+        // Update badge
+        const badge = this.widgetEl?.querySelector('.pc-session-badge');
+        if (badge) {
+          const n = parseInt(badge.textContent || '0') + 1;
+          badge.textContent = n;
+          badge.style.display = '';
         }
       }
     } catch (err) {
@@ -587,11 +734,17 @@ class PromptCoach {
         ${bar('Constraints', r.scores?.constraints)}
         ${bar('Format', r.scores?.format)}
         ${bar('Examples', r.scores?.examples)}
+        ${bar('Efficiency', r.scores?.efficiency)}
       </div>
       <div class="pc-overall">
         <span class="pc-overall-lbl">Overall</span>
         <span class="pc-overall-num pc-${oc}">${r.overall_score}</span>
       </div>
+      ${r.token_estimate ? `
+      <div class="pc-token-info">
+        <span class="pc-token-big">~${r.token_estimate}</span> tokens
+        <div class="pc-token-note">${esc(r.efficiency_note || '')}</div>
+      </div>` : ''}
       ${r.model_tip ? `<div class="pc-tip"><strong>Pro Tip</strong> ${esc(r.model_tip)}</div>` : ''}
       ${hls ? `<div class="pc-hls"><div class="pc-sec">Play-by-Play Review</div>${hls}</div>` : ''}
       <div class="pc-improved">

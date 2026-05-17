@@ -609,3 +609,30 @@
   opacity: 1 !important;
   transform: translateX(-50%) translateY(0) !important;
 }
+
+/* ===== PHASE 1: Token Efficiency ===== */
+.pc-token-count { display: flex !important; align-items: baseline !important; gap: 2px !important; padding-left: 6px !important; border-left: 1px solid rgba(255,255,255,.08) !important; }
+.pc-token-num { font: 700 10px/1 -apple-system, sans-serif !important; color: #d1d5db !important; }
+.pc-token-label { font: 400 8px/1 -apple-system, sans-serif !important; color: #6b7280 !important; }
+.pc-token-info { background: rgba(255,255,255,.03) !important; border: 1px solid rgba(255,255,255,.06) !important; border-radius: 8px !important; padding: 12px !important; margin-bottom: 16px !important; }
+.pc-token-big { font: 800 18px/1 -apple-system, sans-serif !important; color: #D4A017 !important; }
+.pc-token-note { font: 400 12px/1.4 -apple-system, sans-serif !important; color: #9ca3af !important; margin-top: 6px !important; }
+.pc-scores .pc-row:nth-child(7) { grid-column: 1 / -1 !important; }
+
+/* ===== PHASE 2: Intent Verification ===== */
+.pc-intent-card { background: rgba(27,107,62,.06) !important; border: 1px solid rgba(27,107,62,.18) !important; border-radius: 10px !important; padding: 16px !important; margin-bottom: 16px !important; }
+.pc-intent-label { font: 600 11px/1 -apple-system, sans-serif !important; text-transform: uppercase !important; letter-spacing: .5px !important; color: #9ca3af !important; margin-bottom: 8px !important; }
+.pc-intent-goal { font: 500 15px/1.4 -apple-system, sans-serif !important; color: #a7f3d0 !important; font-style: italic !important; margin-bottom: 12px !important; }
+.pc-intent-assumptions { list-style: none !important; padding: 0 !important; margin: 0 0 4px !important; }
+.pc-intent-assumptions li { font: 400 12px/1.4 -apple-system, sans-serif !important; color: #d1d5db !important; padding: 3px 0 3px 16px !important; position: relative !important; }
+.pc-intent-assumptions li::before { content: '?' !important; position: absolute !important; left: 0 !important; color: #D4A017 !important; font-weight: 700 !important; }
+.pc-intent-actions { display: flex !important; gap: 10px !important; margin-bottom: 8px !important; }
+.pc-intent-confirm { all: unset !important; cursor: pointer !important; background: #1B6B3E !important; color: #fff !important; padding: 10px 20px !important; border-radius: 6px !important; font: 600 13px/1 -apple-system, sans-serif !important; }
+.pc-intent-confirm:hover { background: #228b4f !important; }
+.pc-intent-clarify-toggle { all: unset !important; cursor: pointer !important; background: rgba(255,255,255,.08) !important; color: #e5e7eb !important; padding: 10px 16px !important; border-radius: 6px !important; font: 500 13px/1 -apple-system, sans-serif !important; }
+.pc-intent-clarify-toggle:hover { background: rgba(255,255,255,.12) !important; }
+.pc-intent-clarify-input { width: 100% !important; background: rgba(255,255,255,.06) !important; border: 1px solid rgba(255,255,255,.12) !important; border-radius: 6px !important; color: #e5e7eb !important; padding: 10px !important; font: 400 13px/1.4 -apple-system, sans-serif !important; resize: vertical !important; margin-bottom: 8px !important; box-sizing: border-box !important; }
+.pc-intent-clarify-submit { all: unset !important; cursor: pointer !important; background: #1B6B3E !important; color: #fff !important; padding: 8px 16px !important; border-radius: 6px !important; font: 600 12px/1 -apple-system, sans-serif !important; }
+
+/* ===== PHASE 3: Session Badge ===== */
+.pc-session-badge { position: absolute !important; top: -6px !important; right: -6px !important; min-width: 18px !important; height: 18px !important; background: #1B6B3E !important; color: #fff !important; font: 700 9px/18px -apple-system, sans-serif !important; text-align: center !important; border-radius: 9px !important; padding: 0 4px !important; box-shadow: 0 1px 4px rgba(0,0,0,.3) !important; }

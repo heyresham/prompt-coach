@@ -1,6 +1,15 @@
+importScripts('journal.js');
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'COACH_ME') {
-    handleCoachRequest(message.prompt, message.platform, message.model)
+    handleCoachRequest(message.prompt, message.platform, message.model, message.conciseMode, message.clarification)
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ error: error.message }));
+    return true;
+  }
+
+  if (message.type === 'VERIFY_INTENT') {
+    handleIntentVerification(message.prompt, message.platform, message.model)
       .then(result => sendResponse(result))
       .catch(error => sendResponse({ error: error.message }));
     return true;
@@ -12,21 +21,59 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     return true;
   }
+
+  if (message.type === 'SAVE_JOURNAL_ENTRY') {
+    JournalStorage.addEntry(message.entry).then(() => sendResponse({ ok: true })).catch(e => sendResponse({ error: e.message }));
+    return true;
+  }
+  if (message.type === 'GET_JOURNAL_COUNT') {
+    JournalStorage.getCount().then(count => sendResponse({ count }));
+    return true;
+  }
+  if (message.type === 'GET_JOURNAL') {
+    JournalStorage.getEntries().then(entries => sendResponse({ entries })).catch(e => sendResponse({ error: e.message }));
+    return true;
+  }
+  if (message.type === 'CLEAR_JOURNAL') {
+    JournalStorage.clear().then(() => sendResponse({ ok: true }));
+    return true;
+  }
+  if (message.type === 'SET_PASSPHRASE') {
+    JournalStorage.setPassphrase(message.passphrase).then(() => sendResponse({ ok: true })).catch(e => sendResponse({ error: e.message }));
+    return true;
+  }
+  if (message.type === 'UNLOCK_JOURNAL') {
+    JournalStorage.unlock(message.passphrase).then(ok => sendResponse({ ok })).catch(e => sendResponse({ error: e.message }));
+    return true;
+  }
+  if (message.type === 'GET_JOURNAL_STATUS') {
+    JournalStorage.isEncrypted().then(enc => sendResponse({ encrypted: enc, unlocked: JournalStorage.isUnlocked() }));
+    return true;
+  }
 });
 
-async function handleCoachRequest(prompt, platform, model) {
+async function handleCoachRequest(prompt, platform, model, conciseMode, clarification) {
   const { apiKey, apiProvider } = await chrome.storage.sync.get(['apiKey', 'apiProvider']);
 
   if (!apiKey || apiProvider === 'demo') {
     return generateDemoResponse(prompt, platform, model);
   }
 
-  const systemPrompt = buildSystemPrompt(platform, model);
+  let systemPrompt = buildSystemPrompt(platform, model);
+
+  if (conciseMode) {
+    systemPrompt += '\n\nCONCISE MODE: Aggressively optimize the improved prompt for minimal tokens while preserving meaning. Aim for 30%+ reduction.';
+  }
+
+  let userPrompt = `Analyze and coach this prompt:\n\n${prompt}`;
+  if (clarification) {
+    userPrompt += `\n\n[User clarification: ${clarification}]`;
+  }
 
   if (apiProvider === 'anthropic') {
-    return callAnthropic(apiKey, systemPrompt, prompt);
+    return callAnthropic(apiKey, systemPrompt, userPrompt);
   }
-  return callOpenAI(apiKey, systemPrompt, prompt);
+  return callOpenAI(apiKey, systemPrompt, userPrompt);
 }
 
 function generateDemoResponse(prompt, platform, model) {
@@ -40,6 +87,10 @@ function generateDemoResponse(prompt, platform, model) {
   const hasFormat = /\b(format|table|list|bullet|json|csv|markdown|step by step|numbered|code block|sections|outline)\b/.test(lower);
   const hasExamples = /\b(for example|e\.g\.|such as|like this|here's an example|for instance|example:|sample)\b/.test(lower);
 
+  const hasFiller = /\b(please|kindly|basically|actually|really|very|just|simply|I would like you to|if you could|would you be able to)\b/.test(lower);
+  const isVerbose = len > 300 && !hasConstraints;
+  const isEfficient = !isVerbose && !hasFiller && len < 500;
+
   const score = (has, base) => has ? Math.min(base + Math.floor(Math.random() * 20), 95) : Math.floor(Math.random() * 25) + 5;
 
   const scores = {
@@ -48,10 +99,11 @@ function generateDemoResponse(prompt, platform, model) {
     context:     { score: score(hasContext, 55),     feedback: hasContext ? 'Solid background info for the model to work with.' : 'Add context — what\'s the situation, who\'s the audience?' },
     constraints: { score: score(hasConstraints, 55), feedback: hasConstraints ? 'Nice boundaries — keeps the output focused.' : 'Set some guardrails: length, tone, things to avoid.' },
     format:      { score: score(hasFormat, 60),      feedback: hasFormat ? 'Output format specified — no guesswork for the model.' : 'Tell it what shape the answer should take: list, table, essay?' },
-    examples:    { score: score(hasExamples, 55),    feedback: hasExamples ? 'Examples give the model a target to aim for.' : 'Show an example of what "good" looks like — even a short one helps.' }
+    examples:    { score: score(hasExamples, 55),    feedback: hasExamples ? 'Examples give the model a target to aim for.' : 'Show an example of what "good" looks like — even a short one helps.' },
+    efficiency:  { score: score(isEfficient, 55),    feedback: isEfficient ? 'Lean and mean — no wasted tokens.' : 'Cut filler words and tighten up. Every token counts.' }
   };
 
-  const overall = Math.round(Object.values(scores).reduce((s, d) => s + d.score, 0) / 6);
+  const overall = Math.round(Object.values(scores).reduce((s, d) => s + d.score, 0) / 7);
 
   const coachLines = {
     low:  [
@@ -95,20 +147,94 @@ function generateDemoResponse(prompt, platform, model) {
     hasConstraints ? '' : ' Keep it concise and actionable.'
   ].join('').trim();
 
+  const tokenEstimate = Math.ceil(len / 4);
+  const efficiency_note = tokenEstimate > 200
+    ? `Your prompt uses ~${tokenEstimate} tokens. Models have limited context windows (4K–128K tokens). Longer prompts = less room for the response. Trim the fat.`
+    : `~${tokenEstimate} tokens — compact and efficient. Plenty of room for a detailed response.`;
+
   return {
     scores,
     overall_score: overall,
     coach_says: coachSays,
     model_tip: modelTips[platform] || modelTips['ChatGPT'],
     highlights,
-    improved_prompt: improved
+    improved_prompt: improved,
+    token_estimate: tokenEstimate,
+    efficiency_note: efficiency_note
   };
+}
+
+async function handleIntentVerification(prompt, platform, model) {
+  const { apiKey, apiProvider } = await chrome.storage.sync.get(['apiKey', 'apiProvider']);
+
+  if (!apiKey || apiProvider === 'demo') {
+    return generateDemoIntent(prompt);
+  }
+
+  const systemPrompt = buildIntentPrompt(platform, model);
+  const userPrompt = prompt;
+
+  if (apiProvider === 'anthropic') {
+    return callAnthropic(apiKey, systemPrompt, userPrompt);
+  }
+  return callOpenAI(apiKey, systemPrompt, userPrompt);
+}
+
+function generateDemoIntent(prompt) {
+  const lower = prompt.toLowerCase();
+
+  // Extract goal from action verbs
+  const actionVerbs = ['write', 'create', 'generate', 'explain', 'analyze', 'summarize', 'list', 'compare',
+    'design', 'build', 'help', 'review', 'suggest', 'describe', 'debug', 'implement', 'draft', 'outline',
+    'translate', 'convert', 'refactor', 'optimize', 'rewrite', 'evaluate', 'plan', 'identify'];
+  const foundVerb = actionVerbs.find(v => lower.includes(v)) || 'do something with';
+
+  // Build a short goal summary
+  const words = prompt.split(/\s+/).slice(0, 12).join(' ');
+  const goalSummary = `You want to ${foundVerb} something: "${words}${prompt.split(/\s+/).length > 12 ? '...' : ''}"`;
+
+  // Detect assumptions
+  const assumptions = [];
+  if (!/\b(audience|reader|user|customer|beginner|expert|technical|non-technical)\b/.test(lower)) {
+    assumptions.push('Audience is unclear — who is this for?');
+  }
+  if (!/\b(formal|informal|casual|professional|friendly|tone|voice)\b/.test(lower)) {
+    assumptions.push('Tone is not specified — defaulting to neutral.');
+  }
+  if (!/\b(english|spanish|french|german|chinese|japanese|language)\b/.test(lower)) {
+    assumptions.push('Language not specified — assuming English.');
+  }
+
+  return {
+    intent: {
+      goal_summary: goalSummary,
+      assumptions: assumptions.slice(0, 3)
+    }
+  };
+}
+
+function buildIntentPrompt(platform, model) {
+  return `You are a prompt intent analyzer. The user will give you a prompt they plan to send to ${model} on ${platform}.
+
+Your job: identify what they're trying to accomplish and surface hidden assumptions.
+
+RESPOND IN THIS EXACT JSON FORMAT (no markdown, no code fences — raw JSON only):
+{
+  "intent": {
+    "goal_summary": "1-sentence summary of what the user wants",
+    "assumptions": ["assumption 1", "assumption 2", "assumption 3"]
+  }
+}
+
+Keep assumptions to max 3. Focus on: audience, tone, language, scope, output format, or domain knowledge that the prompt takes for granted.
+
+Return ONLY valid JSON.`;
 }
 
 function buildSystemPrompt(platform, model) {
   return `You are the Prompt Coach — a sports-themed AI prompting coach with the personality of an enthusiastic, knowledgeable sideline coach. You have a whistle and you're not afraid to use it.
 
-Your job is to analyze the user's prompt and help them improve it. You score prompts across 6 dimensions and provide actionable, educational feedback using sports metaphors.
+Your job is to analyze the user's prompt and help them improve it. You score prompts across 7 dimensions and provide actionable, educational feedback using sports metaphors.
 
 The user is currently on ${platform} using ${model}.
 
@@ -120,7 +246,8 @@ RESPOND IN THIS EXACT JSON FORMAT (no markdown, no code fences — raw JSON only
     "context": { "score": 0-100, "feedback": "brief feedback" },
     "constraints": { "score": 0-100, "feedback": "brief feedback" },
     "format": { "score": 0-100, "feedback": "brief feedback" },
-    "examples": { "score": 0-100, "feedback": "brief feedback" }
+    "examples": { "score": 0-100, "feedback": "brief feedback" },
+    "efficiency": { "score": 0-100, "feedback": "brief" }
   },
   "overall_score": 0-100,
   "improved_prompt": "the rewritten, improved version of their prompt",
@@ -128,7 +255,9 @@ RESPOND IN THIS EXACT JSON FORMAT (no markdown, no code fences — raw JSON only
   "model_tip": "A specific tip for optimizing this prompt on ${model}.",
   "highlights": [
     { "original": "weak text from prompt", "issue": "what's wrong", "fix": "what to change" }
-  ]
+  ],
+  "token_estimate": <number>,
+  "efficiency_note": "1-sentence educational note about token usage"
 }
 
 SCORING GUIDE:
@@ -138,6 +267,7 @@ SCORING GUIDE:
 - Constraints (0-100): Boundaries, limitations, or requirements set?
 - Format (0-100): Desired output format specified?
 - Examples (0-100): Examples of "good" output provided?
+- Efficiency (0-100): Is the prompt concise? Are there filler words or redundancy? Every token costs money and fills the context window.
 
 0 = completely absent. 50 = present but vague. 100 = excellent.
 
@@ -169,7 +299,7 @@ async function callOpenAI(apiKey, systemPrompt, userPrompt) {
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Analyze and coach this prompt:\n\n${userPrompt}` }
+        { role: 'user', content: userPrompt }
       ],
       temperature: 0.7
     })
@@ -196,7 +326,7 @@ async function callAnthropic(apiKey, systemPrompt, userPrompt) {
       max_tokens: 2048,
       system: systemPrompt,
       messages: [
-        { role: 'user', content: `Analyze and coach this prompt:\n\n${userPrompt}` }
+        { role: 'user', content: userPrompt }
       ]
     })
   });

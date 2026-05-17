@@ -41,6 +41,21 @@
 
       <button id="save" class="btn-primary">Save Settings</button>
       <div id="status" class="status" role="status"></div>
+
+      <div class="toggle-row">
+        <label class="toggle-label">
+          <input type="checkbox" id="conciseMode">
+          <span>Concise Mode</span>
+        </label>
+        <span class="hint">Optimize prompts for fewer tokens</span>
+      </div>
+      <div class="toggle-row">
+        <label class="toggle-label">
+          <input type="checkbox" id="intentCheck" checked>
+          <span>Intent Check</span>
+        </label>
+        <span class="hint">Verify assumptions before coaching</span>
+      </div>
     </div>
 
     <div class="card how">
@@ -68,6 +83,20 @@
 
     <div class="card">
       <button id="resetOnboarding" class="btn-secondary">Replay Onboarding Tour</button>
+    </div>
+
+    <div class="card">
+      <h2>Learning Journal</h2>
+      <p class="journal-stat"><span id="journalCount">0</span> coaching sessions</p>
+      <button id="viewJournal" class="btn-primary" style="margin-bottom:8px">View Journal</button>
+      <button id="clearJournal" class="btn-secondary">Clear All Data</button>
+    </div>
+
+    <div class="card">
+      <h2>Journal Security</h2>
+      <p class="hint" id="encStatus">No passphrase set — data stored unencrypted</p>
+      <input type="password" id="passphrase" placeholder="Set a passphrase…">
+      <button id="setPassphrase" class="btn-secondary" style="margin-top:6px">Set Passphrase</button>
     </div>
   </div>
   <script src="popup.js"></script>

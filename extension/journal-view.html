@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt Coach — Learning Journal</title>
+  <link rel="stylesheet" href="journal-view.css">
+</head>
+<body>
+  <div class="jv-container">
+    <header class="jv-header">
+      <h1>Learning Journal</h1>
+      <p class="jv-subtitle">Your prompt coaching history</p>
+    </header>
+
+    <div id="unlockForm" class="jv-unlock" style="display:none">
+      <p>Your journal is encrypted. Enter your passphrase to unlock.</p>
+      <div class="jv-unlock-row">
+        <input type="password" id="unlockPass" placeholder="Passphrase…">
+        <button id="unlockBtn" class="jv-btn-primary">Unlock</button>
+      </div>
+      <p id="unlockError" class="jv-error" style="display:none">Wrong passphrase. Try again.</p>
+    </div>
+
+    <div id="statsRow" class="jv-stats" style="display:none"></div>
+
+    <div id="trendRow" class="jv-trend" style="display:none">
+      <h2>Score Trend</h2>
+      <svg id="trendSvg" class="jv-sparkline" viewBox="0 0 600 120" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div id="emptyState" class="jv-empty" style="display:none">
+      <p>No sessions yet. Start prompting to build your journal.</p>
+    </div>
+
+    <table id="journalTable" class="jv-table" style="display:none">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Platform</th>
+          <th>Overall</th>
+          <th>Prompt Preview</th>
+        </tr>
+      </thead>
+      <tbody id="journalBody"></tbody>
+    </table>
+  </div>
+  <script src="journal-view.js"></script>
+</body>
+</html>
