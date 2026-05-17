@@ -15,7 +15,7 @@
   gap: 6px !important;
   padding: 4px 10px 4px 6px !important;
   background: rgba(17, 18, 20, .95) !important;
-  border: 1px solid rgba(27, 107, 62, .45) !important;
+  border: 1px solid rgba(212, 160, 23, .4) !important;
   border-radius: 24px !important;
   backdrop-filter: blur(8px) !important;
   cursor: pointer !important;
@@ -27,8 +27,8 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 .pc-widget:hover {
-  box-shadow: 0 2px 20px rgba(27,107,62,.45) !important;
-  border-color: #1B6B3E !important;
+  box-shadow: 0 2px 20px rgba(212,160,23,.35) !important;
+  border-color: #D4A017 !important;
   transform: scale(1.05) !important;
 }
 .pc-widget-dim { opacity: .6 !important; }
@@ -134,13 +134,15 @@
 @keyframes pc-fade-in { from { opacity: 0 } to { opacity: 1 } }
 
 .pc-onboard-welcome {
-  background: #1a1b1e !important;
-  border: 1px solid rgba(27,107,62,.3) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  background: linear-gradient(165deg, #0d3d1f 0%, #0a2e17 40%, #111214 100%) !important;
+  border: 1px solid rgba(27,107,62,.4) !important;
   border-radius: 16px !important;
   padding: 36px 32px 28px !important;
-  max-width: 400px !important;
+  max-width: 420px !important;
   text-align: center !important;
-  box-shadow: 0 8px 40px rgba(0,0,0,.5) !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05) !important;
   animation: pc-scale-in .35s cubic-bezier(.16,1,.3,1) !important;
 }
 @keyframes pc-scale-in {
@@ -148,27 +150,81 @@
   to   { transform: scale(1);   opacity: 1 }
 }
 
-.pc-onboard-mascot { margin-bottom: 12px !important; }
+/* Turf field lines (background decoration) */
+.pc-onboard-field {
+  position: absolute !important;
+  top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+  pointer-events: none !important;
+  opacity: .08 !important;
+}
+.pc-field-line {
+  position: absolute !important;
+  background: #fff !important;
+}
+.pc-field-line-h {
+  top: 50% !important; left: 0 !important; right: 0 !important;
+  height: 2px !important;
+}
+.pc-field-circle {
+  position: absolute !important;
+  top: 50% !important; left: 50% !important;
+  width: 80px !important; height: 80px !important;
+  transform: translate(-50%, -50%) !important;
+  border: 2px solid #fff !important;
+  border-radius: 50% !important;
+}
+.pc-field-line-v1 {
+  top: 0 !important; bottom: 0 !important; left: 15% !important;
+  width: 2px !important;
+}
+.pc-field-line-v2 {
+  top: 0 !important; bottom: 0 !important; right: 15% !important;
+  width: 2px !important;
+}
+
+/* Referee stripes bar */
+.pc-onboard-stripes {
+  position: relative !important;
+  display: flex !important;
+  height: 6px !important;
+  margin: 0 -32px 20px !important;
+  overflow: hidden !important;
+}
+.pc-onboard-stripes span {
+  flex: 1 !important;
+}
+.pc-onboard-stripes span:nth-child(odd) { background: #1a1a1a !important; }
+.pc-onboard-stripes span:nth-child(even) { background: #e5e7eb !important; }
+
+.pc-onboard-mascot { margin-bottom: 12px !important; position: relative !important; z-index: 1 !important; }
 .pc-onboard-title {
-  font: 700 22px/1.2 -apple-system, sans-serif !important;
+  font: 800 24px/1.2 -apple-system, sans-serif !important;
   color: #fff !important;
   margin: 0 0 8px !important;
+  position: relative !important;
+  z-index: 1 !important;
+  text-shadow: 0 2px 8px rgba(0,0,0,.3) !important;
 }
 .pc-onboard-desc {
   font: 400 14px/1.55 -apple-system, sans-serif !important;
-  color: #9ca3af !important;
+  color: #a7c4b5 !important;
   margin: 0 0 20px !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 .pc-onboard-features {
   text-align: left !important;
   margin-bottom: 24px !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 .pc-onboard-feat {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
   padding: 8px 12px !important;
-  background: rgba(255,255,255,.03) !important;
+  background: rgba(0,0,0,.25) !important;
+  border: 1px solid rgba(27,107,62,.2) !important;
   border-radius: 8px !important;
   margin-bottom: 6px !important;
   font: 400 13px/1.4 -apple-system, sans-serif !important;
@@ -181,34 +237,40 @@
   gap: 10px !important;
   justify-content: center !important;
   margin-bottom: 16px !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 .pc-onboard-primary {
   all: unset !important;
   cursor: pointer !important;
-  padding: 10px 24px !important;
-  background: #1B6B3E !important;
+  padding: 12px 28px !important;
+  background: linear-gradient(135deg, #D4A017, #B8860B) !important;
   color: #fff !important;
-  font: 600 14px/1 -apple-system, sans-serif !important;
+  font: 700 14px/1 -apple-system, sans-serif !important;
   border-radius: 8px !important;
-  transition: background .2s !important;
+  transition: all .2s !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,.3) !important;
+  box-shadow: 0 2px 8px rgba(212,160,23,.3) !important;
 }
-.pc-onboard-primary:hover { background: #228b4f !important; }
+.pc-onboard-primary:hover { background: linear-gradient(135deg, #E5C73A, #C9A029) !important; transform: translateY(-1px) !important; }
 .pc-onboard-skip {
   all: unset !important;
   cursor: pointer !important;
   padding: 10px 16px !important;
-  color: #6b7280 !important;
+  color: #6b8f7a !important;
   font: 500 13px/1 -apple-system, sans-serif !important;
   border-radius: 8px !important;
   transition: color .2s !important;
 }
-.pc-onboard-skip:hover { color: #9ca3af !important; }
+.pc-onboard-skip:hover { color: #a7c4b5 !important; }
 
 /* Step dots */
 .pc-onboard-step-dots {
   display: flex !important;
   gap: 6px !important;
   justify-content: center !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 .pc-onboard-step-dots span {
   width: 6px !important; height: 6px !important;
@@ -219,7 +281,7 @@
 .pc-onboard-step-dots .pc-dot-active {
   width: 18px !important;
   border-radius: 3px !important;
-  background: #1B6B3E !important;
+  background: #D4A017 !important;
 }
 
 /* ===== ONBOARDING — Tooltips ===== */

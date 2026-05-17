@@ -55,19 +55,33 @@ const PLATFORMS = {
 
 function whistleSVG(size = 40) {
   return `<svg class="pc-whistle-svg" width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M58 18 C63 4, 76 4, 72 18" stroke="#1B6B3E" fill="none" stroke-width="3" stroke-linecap="round"/>
-    <circle cx="65" cy="15" r="4.5" fill="none" stroke="#9CA3AF" stroke-width="2.5"/>
-    <path d="M12 40 C8 40, 5 44, 5 52 C5 60, 8 64, 12 64 L68 64 C76 64, 80 60, 80 52 C80 44, 76 40, 68 40 Z" fill="#D4D4D8" stroke="#A1A1AA" stroke-width="1.5"/>
-    <path d="M76 45 L92 45 C95 45, 97 47, 97 50 L97 54 C97 57, 95 59, 92 59 L76 59" fill="#B4B4BA" stroke="#A1A1AA" stroke-width="1.5"/>
-    <ellipse cx="10" cy="52" rx="4" ry="6" fill="#71717A"/>
-    <line x1="28" y1="40" x2="28" y2="64" stroke="#E8E8EC" stroke-width="1.5" opacity="0.5"/>
-    <line x1="62" y1="40" x2="62" y2="64" stroke="#E8E8EC" stroke-width="1.5" opacity="0.5"/>
-    <ellipse cx="39" cy="51" rx="8" ry="9" fill="white"/>
-    <circle cx="41" cy="51" r="5" fill="#1a1a1a"/>
-    <circle cx="42.5" cy="49" r="2" fill="white"/>
-    <ellipse cx="55" cy="51" rx="8" ry="9" fill="white"/>
-    <circle cx="57" cy="51" r="5" fill="#1a1a1a"/>
-    <circle cx="58.5" cy="49" r="2" fill="white"/>
+    <!-- Lanyard - black referee cord -->
+    <path d="M56 18 C62 4, 74 4, 70 18" stroke="#1a1a1a" fill="none" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M56 18 C62 4, 74 4, 70 18" stroke="#333" fill="none" stroke-width="2" stroke-linecap="round"/>
+    <!-- Ring - chrome -->
+    <circle cx="63" cy="14" r="4.5" fill="none" stroke="#bbb" stroke-width="2.5"/>
+    <circle cx="63" cy="14" r="4.5" fill="none" stroke="#ddd" stroke-width="1" opacity=".4"/>
+    <!-- Body - gold referee whistle -->
+    <path d="M10 38 C6 38, 4 43, 4 50 C4 57, 6 62, 10 62 L66 62 C73 62, 78 58, 78 50 C78 42, 73 38, 66 38 Z" fill="#D4A017" stroke="#B8860B" stroke-width="1.5"/>
+    <!-- Metallic sheen -->
+    <path d="M10 38 C6 38, 4 43, 4 50 L66 50 C73 50, 78 46, 78 42 C78 40, 73 38, 66 38 Z" fill="#E5C73A" opacity=".3"/>
+    <!-- Grip ridges -->
+    <line x1="26" y1="38" x2="26" y2="62" stroke="#B8860B" stroke-width="1.5" opacity=".5"/>
+    <line x1="30" y1="38" x2="30" y2="62" stroke="#E5C73A" stroke-width=".8" opacity=".35"/>
+    <line x1="60" y1="38" x2="60" y2="62" stroke="#B8860B" stroke-width="1.5" opacity=".5"/>
+    <line x1="64" y1="38" x2="64" y2="62" stroke="#E5C73A" stroke-width=".8" opacity=".35"/>
+    <!-- Mouthpiece -->
+    <path d="M75 43 L90 43 C93 43, 96 45, 96 48 L96 52 C96 55, 93 57, 90 57 L75 57" fill="#C9A029" stroke="#B8860B" stroke-width="1.5"/>
+    <rect x="94" y="46" width="4" height="8" rx="2" fill="#B8860B"/>
+    <!-- Sound slot -->
+    <ellipse cx="8" cy="50" rx="3.5" ry="5.5" fill="#5a4a10"/>
+    <!-- Eyes -->
+    <ellipse cx="40" cy="49" rx="8" ry="9" fill="white"/>
+    <circle cx="42" cy="49" r="5" fill="#1a1a1a"/>
+    <circle cx="43.5" cy="47" r="2" fill="white"/>
+    <ellipse cx="54" cy="49" rx="8" ry="9" fill="white"/>
+    <circle cx="56" cy="49" r="5" fill="#1a1a1a"/>
+    <circle cx="57.5" cy="47" r="2" fill="white"/>
   </svg>`;
 }
 
@@ -163,16 +177,25 @@ class Onboarding {
     this.overlay.className = 'pc-onboard-overlay';
     this.overlay.innerHTML = `
       <div class="pc-onboard-welcome">
-        <div class="pc-onboard-mascot">${whistleSVG(72)}</div>
+        <div class="pc-onboard-field">
+          <div class="pc-field-line pc-field-line-h"></div>
+          <div class="pc-field-circle"></div>
+          <div class="pc-field-line pc-field-line-v1"></div>
+          <div class="pc-field-line pc-field-line-v2"></div>
+        </div>
+        <div class="pc-onboard-stripes">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="pc-onboard-mascot">${whistleSVG(80)}</div>
         <h2 class="pc-onboard-title">Meet Your Prompt Coach!</h2>
-        <p class="pc-onboard-desc">I live right here where you prompt. I'll score your prompts in real-time and help you write better ones — like a coach on the sideline.</p>
+        <p class="pc-onboard-desc">I live right here on the sideline. I'll score your prompts in real-time and coach you to write better ones.</p>
         <div class="pc-onboard-features">
-          <div class="pc-onboard-feat"><span class="pc-onboard-feat-icon">⚡</span><span>Real-time prompt scoring as you type</span></div>
-          <div class="pc-onboard-feat"><span class="pc-onboard-feat-icon">🎯</span><span>Detailed feedback across 6 dimensions</span></div>
-          <div class="pc-onboard-feat"><span class="pc-onboard-feat-icon">🔄</span><span>Improved prompts you can use instantly</span></div>
+          <div class="pc-onboard-feat"><span class="pc-onboard-feat-icon">🏟️</span><span>Real-time prompt scoring as you type</span></div>
+          <div class="pc-onboard-feat"><span class="pc-onboard-feat-icon">🏆</span><span>Detailed feedback across 6 dimensions</span></div>
+          <div class="pc-onboard-feat"><span class="pc-onboard-feat-icon">📋</span><span>Improved prompts from the coach's playbook</span></div>
         </div>
         <div class="pc-onboard-actions">
-          <button class="pc-onboard-primary">Show Me How</button>
+          <button class="pc-onboard-primary">Let's Train →</button>
           <button class="pc-onboard-skip">Skip Tour</button>
         </div>
         <div class="pc-onboard-step-dots"><span class="pc-dot-active"></span><span></span><span></span><span></span></div>
