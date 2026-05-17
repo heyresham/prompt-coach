@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
-// Prompt Coach — Content Script (v2)
-// Fixes: ProseMirror detection, MutationObserver on field content,
-// body-appended fixed-position widget, Grammarly-style onboarding.
+// Prompt Coach — Content Script (v3)
+// Architecture: "find field on demand" — never hold a permanent reference to
+// the prompt field. Find it fresh every time we need to read or score.
 // ---------------------------------------------------------------------------
 
 const PLATFORMS = {
@@ -13,7 +13,8 @@ const PLATFORMS = {
       '[id="prompt-textarea"]',
       'div.ProseMirror[contenteditable="true"]',
       'div[contenteditable="true"][data-placeholder]',
-      'form textarea'
+      'form textarea',
+      'div[contenteditable="true"]'
     ],
     model: 'GPT-4o'
   },
@@ -52,9 +53,6 @@ const PLATFORMS = {
   }
 };
 
-// ---------------------------------------------------------------------------
-// SVG
-// ---------------------------------------------------------------------------
 function whistleSVG(size = 40) {
   return `<svg class="pc-whistle-svg" width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M58 18 C63 4, 76 4, 72 18" stroke="#1B6B3E" fill="none" stroke-width="3" stroke-linecap="round"/>
@@ -121,7 +119,7 @@ function quickScore(text) {
 }
 
 // ---------------------------------------------------------------------------
-// Onboarding Manager
+// Onboarding
 // ---------------------------------------------------------------------------
 class Onboarding {
   constructor(coach) {
@@ -134,9 +132,7 @@ class Onboarding {
 
   async shouldShow() {
     return new Promise(resolve => {
-      chrome.storage.sync.get(['onboardingDone'], data => {
-        resolve(!data.onboardingDone);
-      });
+      chrome.storage.sync.get(['onboardingDone'], data => resolve(!data.onboardingDone));
     });
   }
 
@@ -146,17 +142,13 @@ class Onboarding {
   }
 
   async start() {
-    if (!(await this.shouldShow())) {
-      this.done = true;
-      return;
-    }
+    if (!(await this.shouldShow())) { this.done = true; return; }
     this.showStep(0);
   }
 
   showStep(step) {
     this.step = step;
     this.clear();
-
     const steps = [
       { type: 'welcome' },
       { type: 'tooltip', target: 'mascot', title: 'Meet Your Coach',
@@ -166,14 +158,7 @@ class Onboarding {
       { type: 'tooltip', target: 'mascot', title: 'Keyboard Shortcut',
         text: 'Press Ctrl+Shift+P for instant coaching — no clicking needed. Now write something and watch the score update!' },
     ];
-
-    if (step >= steps.length) {
-      this.markDone();
-      this.clear();
-      this.coach.showContextualHint('firstUse');
-      return;
-    }
-
+    if (step >= steps.length) { this.markDone(); this.clear(); this.coach.showContextualHint('firstUse'); return; }
     const s = steps[step];
     if (s.type === 'welcome') this.showWelcome();
     else this.showTooltip(s);
@@ -186,38 +171,20 @@ class Onboarding {
       <div class="pc-onboard-welcome">
         <div class="pc-onboard-mascot">${whistleSVG(72)}</div>
         <h2 class="pc-onboard-title">Meet Your Prompt Coach!</h2>
-        <p class="pc-onboard-desc">
-          I live right here where you prompt. I'll score your prompts in real-time
-          and help you write better ones — like a coach on the sideline.
-        </p>
+        <p class="pc-onboard-desc">I live right here where you prompt. I'll score your prompts in real-time and help you write better ones — like a coach on the sideline.</p>
         <div class="pc-onboard-features">
-          <div class="pc-onboard-feat">
-            <span class="pc-onboard-feat-icon">⚡</span>
-            <span>Real-time prompt scoring as you type</span>
-          </div>
-          <div class="pc-onboard-feat">
-            <span class="pc-onboard-feat-icon">🎯</span>
-            <span>Detailed feedback across 6 dimensions</span>
-          </div>
-          <div class="pc-onboard-feat">
-            <span class="pc-onboard-feat-icon">🔄</span>
-            <span>Improved prompts you can use instantly</span>
-          </div>
+          <div class="pc-onboard-feat"><span class="pc-onboard-feat-icon">⚡</span><span>Real-time prompt scoring as you type</span></div>
+          <div class="pc-onboard-feat"><span class="pc-onboard-feat-icon">🎯</span><span>Detailed feedback across 6 dimensions</span></div>
+          <div class="pc-onboard-feat"><span class="pc-onboard-feat-icon">🔄</span><span>Improved prompts you can use instantly</span></div>
         </div>
         <div class="pc-onboard-actions">
           <button class="pc-onboard-primary">Show Me How</button>
           <button class="pc-onboard-skip">Skip Tour</button>
         </div>
-        <div class="pc-onboard-step-dots">
-          <span class="pc-dot-active"></span><span></span><span></span><span></span>
-        </div>
+        <div class="pc-onboard-step-dots"><span class="pc-dot-active"></span><span></span><span></span><span></span></div>
       </div>`;
-
     this.overlay.querySelector('.pc-onboard-primary').addEventListener('click', () => this.showStep(1));
-    this.overlay.querySelector('.pc-onboard-skip').addEventListener('click', () => {
-      this.markDone();
-      this.clear();
-    });
+    this.overlay.querySelector('.pc-onboard-skip').addEventListener('click', () => { this.markDone(); this.clear(); });
     document.body.appendChild(this.overlay);
   }
 
@@ -225,15 +192,12 @@ class Onboarding {
     const targetEl = config.target === 'gauge'
       ? this.coach.widgetEl?.querySelector('.pc-score-gauge')
       : this.coach.widgetEl;
-
     if (!targetEl) { this.showStep(this.step + 1); return; }
 
-    // Spotlight overlay
     this.overlay = document.createElement('div');
     this.overlay.className = 'pc-onboard-overlay pc-onboard-spotlight';
     document.body.appendChild(this.overlay);
 
-    // Spotlight hole
     const rect = targetEl.getBoundingClientRect();
     const hole = document.createElement('div');
     hole.className = 'pc-onboard-hole';
@@ -241,71 +205,52 @@ class Onboarding {
     document.body.appendChild(hole);
     this._hole = hole;
 
-    // Tooltip
     this.tooltip = document.createElement('div');
     this.tooltip.className = 'pc-onboard-tip';
-
     const isLast = this.step === 3;
-    const stepDots = [0,1,2,3].map(i =>
-      `<span class="${i === this.step ? 'pc-dot-active' : ''}"></span>`).join('');
-
+    const dots = [0,1,2,3].map(i => `<span class="${i === this.step ? 'pc-dot-active' : ''}"></span>`).join('');
     this.tooltip.innerHTML = `
       <div class="pc-onboard-tip-title">${config.title}</div>
       <div class="pc-onboard-tip-text">${config.text}</div>
       <div class="pc-onboard-tip-footer">
-        <div class="pc-onboard-step-dots">${stepDots}</div>
+        <div class="pc-onboard-step-dots">${dots}</div>
         <div class="pc-onboard-tip-actions">
           <button class="pc-onboard-skip">Skip</button>
           <button class="pc-onboard-primary">${isLast ? 'Got It!' : 'Next →'}</button>
         </div>
       </div>
       <div class="pc-onboard-arrow"></div>`;
-
-    // Position tooltip above the target
     document.body.appendChild(this.tooltip);
     const tipRect = this.tooltip.getBoundingClientRect();
     const top = rect.top - tipRect.height - 16;
     const left = Math.max(12, rect.left + rect.width / 2 - tipRect.width / 2);
     this.tooltip.style.top = (top > 10 ? top : rect.bottom + 16) + 'px';
     this.tooltip.style.left = left + 'px';
-
-    if (top <= 10) {
-      this.tooltip.querySelector('.pc-onboard-arrow').classList.add('pc-arrow-top');
-    }
+    if (top <= 10) this.tooltip.querySelector('.pc-onboard-arrow').classList.add('pc-arrow-top');
 
     this.tooltip.querySelector('.pc-onboard-primary').addEventListener('click', () => this.showStep(this.step + 1));
-    this.tooltip.querySelector('.pc-onboard-skip').addEventListener('click', () => {
-      this.markDone();
-      this.clear();
-    });
+    this.tooltip.querySelector('.pc-onboard-skip').addEventListener('click', () => { this.markDone(); this.clear(); });
   }
 
   clear() {
-    this.overlay?.remove();
-    this.overlay = null;
-    this.tooltip?.remove();
-    this.tooltip = null;
-    this._hole?.remove();
-    this._hole = null;
+    this.overlay?.remove(); this.overlay = null;
+    this.tooltip?.remove(); this.tooltip = null;
+    this._hole?.remove(); this._hole = null;
   }
 }
 
 // ---------------------------------------------------------------------------
-// Main Controller
+// Main Controller — "find on demand" architecture
 // ---------------------------------------------------------------------------
 class PromptCoach {
   constructor() {
     this.platform = this.detectPlatform();
-    this.promptField = null;
     this.widgetEl = null;
     this.panelEl = null;
-    this.debounceTimer = null;
     this.isCoaching = false;
     this.lastText = '';
-    this.fieldObserver = null;
-    this.positionRAF = null;
-    this.onboarding = new Onboarding(this);
     this.hintShown = {};
+    this.onboarding = new Onboarding(this);
 
     if (this.platform) this.init();
   }
@@ -318,11 +263,34 @@ class PromptCoach {
     return null;
   }
 
+  // Find the prompt field RIGHT NOW — never cache the reference
+  findField() {
+    for (const sel of this.platform.selectors) {
+      const els = document.querySelectorAll(sel);
+      for (const el of els) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width < 80 || rect.height < 15) continue;
+        if (rect.bottom < 0 || rect.top > window.innerHeight) continue;
+        const style = getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') continue;
+        return el;
+      }
+    }
+    return null;
+  }
+
+  readFieldText() {
+    const field = this.findField();
+    if (!field) return '';
+    if (field.tagName === 'TEXTAREA' || field.tagName === 'INPUT') return field.value;
+    return field.innerText || field.textContent || '';
+  }
+
   init() {
-    this.observeDOM();
-    this.tryAttach();
-    // Polling fallback — SPAs can re-render at any time
-    setInterval(() => this.tryAttach(), 1500);
+    this.createWidget();
+
+    // Poll for text changes every 500ms — works with any input method
+    setInterval(() => this.pollScore(), 500);
 
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'P') {
@@ -330,107 +298,15 @@ class PromptCoach {
         this.coachMe();
       }
     });
+
+    setTimeout(() => this.onboarding.start(), 800);
   }
 
-  observeDOM() {
-    let detachTimeout = null;
-    new MutationObserver(() => {
-      // Debounce detach — ChatGPT re-renders rapidly and briefly removes elements
-      if (this.promptField && !document.contains(this.promptField)) {
-        if (!detachTimeout) {
-          detachTimeout = setTimeout(() => {
-            detachTimeout = null;
-            if (this.promptField && !document.contains(this.promptField)) {
-              this.detach();
-            }
-          }, 500);
-        }
-      }
-      if (!this.promptField) this.tryAttach();
-    }).observe(document.body, { childList: true, subtree: true });
-  }
-
-  tryAttach() {
-    if (this.promptField && document.contains(this.promptField)) return;
-
-    for (const sel of this.platform.selectors) {
-      const els = document.querySelectorAll(sel);
-      for (const el of els) {
-        if (this.isValidPromptField(el)) {
-          this.attach(el);
-          return;
-        }
-      }
-    }
-  }
-
-  isValidPromptField(el) {
-    if (el.dataset.pcAttached) return false;
-    const rect = el.getBoundingClientRect();
-    // Must be visible and reasonably sized
-    if (rect.width < 100 || rect.height < 20) return false;
-    if (rect.bottom < 0 || rect.top > window.innerHeight) return false;
-    // Skip hidden elements
-    const style = getComputedStyle(el);
-    if (style.display === 'none' || style.visibility === 'hidden') return false;
-    return true;
-  }
-
-  attach(field) {
-    this.promptField = field;
-    field.dataset.pcAttached = 'true';
-
-    this.createWidget();
-    this.startPositionTracking();
-    this.observeFieldContent();
-
-    // Standard events
-    field.addEventListener('input', () => this.onInput());
-    field.addEventListener('keyup', () => this.onInput());
-    field.addEventListener('paste', () => setTimeout(() => this.onInput(), 50));
-    field.addEventListener('focus', () => this.showWidget());
-    field.addEventListener('blur', () => {
-      // Delay hide so clicks on widget still register
-      setTimeout(() => {
-        if (!this.isCoaching && !document.activeElement?.closest('.pc-widget')) {
-          this.dimWidget();
-        }
-      }, 200);
-    });
-
-    // Trigger onboarding after widget is placed
-    setTimeout(() => this.onboarding.start(), 600);
-  }
-
-  detach() {
-    this.promptField = null;
-    // Keep widget visible — just stop tracking the old field
-    this.fieldObserver?.disconnect();
-    this.fieldObserver = null;
-    if (this.positionRAF) cancelAnimationFrame(this.positionRAF);
-  }
-
-  // Observe the field's DOM for content changes (handles voice input, ProseMirror)
-  observeFieldContent() {
-    this.fieldObserver = new MutationObserver(() => this.onInput());
-    this.fieldObserver.observe(this.promptField, {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
-  }
-
-  // ---- Widget (body-appended, fixed position) ----
+  // ---- Widget ----
 
   createWidget() {
-    // Don't recreate if already exists and is in the DOM
-    if (this.widgetEl && document.contains(this.widgetEl)) return;
-    this.widgetEl?.remove();
-
     this.widgetEl = document.createElement('div');
     this.widgetEl.className = 'pc-widget pc-widget-entrance';
-
-    // Inline styles guarantee visibility even if stylesheet fails
     this.widgetEl.style.cssText = `
       position:fixed !important; z-index:2147483647 !important;
       bottom:80px !important; right:24px !important;
@@ -439,7 +315,7 @@ class PromptCoach {
     `;
 
     this.widgetEl.innerHTML = `
-      <div class="pc-widget-whistle" title="Click to get coached! (Ctrl+Shift+P)">${whistleSVG(34)}</div>
+      <div class="pc-widget-whistle">${whistleSVG(34)}</div>
       <div class="pc-score-gauge">
         <svg viewBox="0 0 36 36" class="pc-score-ring">
           <path class="pc-score-bg"
@@ -455,103 +331,41 @@ class PromptCoach {
         <span class="pc-status-label">Watching</span>
       </div>`;
 
-    this.widgetEl.querySelector('.pc-widget-whistle').addEventListener('click', (e) => {
+    // Entire widget is clickable
+    this.widgetEl.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.coachMe();
     });
 
     document.body.appendChild(this.widgetEl);
-
-    // Remove entrance animation class after it plays
     setTimeout(() => this.widgetEl?.classList.remove('pc-widget-entrance'), 800);
   }
 
-  startPositionTracking() {
-    // Widget uses fixed bottom/right via inline styles.
-    // Optionally nudge it near the prompt field if we can see it.
-    const update = () => {
-      if (!this.widgetEl) return;
-      if (this.promptField && document.contains(this.promptField)) {
-        const rect = this.promptField.getBoundingClientRect();
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
+  // ---- Polling-based scoring ----
 
-        // Only reposition if the prompt field rect looks valid
-        if (rect.width > 100 && rect.height > 10 &&
-            rect.bottom > 0 && rect.top < vh &&
-            rect.right > 0 && rect.left < vw) {
+  pollScore() {
+    const text = this.readFieldText().trim();
+    if (text === this.lastText) return;
+    this.lastText = text;
 
-          const widgetW = this.widgetEl.offsetWidth || 140;
-          const widgetH = this.widgetEl.offsetHeight || 40;
+    if (text.length > 10) {
+      const score = quickScore(text);
+      this.updateScore(score);
+      this.updateStatus(score);
 
-          let top = rect.bottom - widgetH - 6;
-          let left = rect.right - widgetW - 12;
-
-          // Clamp inside viewport
-          top = Math.max(8, Math.min(top, vh - widgetH - 8));
-          left = Math.max(8, Math.min(left, vw - widgetW - 8));
-
-          // Switch from bottom/right to top/left positioning
-          this.widgetEl.style.bottom = 'auto';
-          this.widgetEl.style.right = 'auto';
-          this.widgetEl.style.top = top + 'px';
-          this.widgetEl.style.left = left + 'px';
-        }
+      if (!this.hintShown.typing && this.onboarding.done) {
+        this.showContextualHint('typing');
+        this.hintShown.typing = true;
       }
-      this.positionRAF = requestAnimationFrame(update);
-    };
-    // Small delay to let the widget render with its default position first
-    setTimeout(() => { this.positionRAF = requestAnimationFrame(update); }, 300);
-  }
-
-  showWidget() {
-    if (!this.widgetEl) return;
-    this.widgetEl.style.opacity = '1';
-    this.widgetEl.classList.remove('pc-widget-dim');
-  }
-
-  dimWidget() {
-    if (!this.widgetEl) return;
-    this.widgetEl.style.opacity = '0.6';
-  }
-
-  // ---- Input + Scoring ----
-
-  getPromptText() {
-    if (!this.promptField) return '';
-    if (this.promptField.tagName === 'TEXTAREA' || this.promptField.tagName === 'INPUT') {
-      return this.promptField.value;
+      if (score >= 60 && !this.hintShown.goodScore && this.onboarding.done) {
+        this.showContextualHint('goodScore');
+        this.hintShown.goodScore = true;
+      }
+    } else {
+      this.updateScore(0);
+      this.updateStatus(0);
     }
-    return this.promptField.innerText || this.promptField.textContent || '';
-  }
-
-  onInput() {
-    clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(() => {
-      const text = this.getPromptText().trim();
-      if (text === this.lastText) return;
-      this.lastText = text;
-
-      if (text.length > 10) {
-        const score = quickScore(text);
-        this.updateScore(score);
-        this.updateStatus(score);
-        this.showWidget();
-
-        if (!this.hintShown.typing) {
-          this.showContextualHint('typing');
-          this.hintShown.typing = true;
-        }
-        if (score >= 60 && !this.hintShown.goodScore) {
-          this.showContextualHint('goodScore');
-          this.hintShown.goodScore = true;
-        }
-      } else {
-        this.updateScore(0);
-        this.updateStatus(0);
-      }
-    }, 300);
   }
 
   updateScore(score) {
@@ -573,77 +387,44 @@ class PromptCoach {
     const dot = this.widgetEl?.querySelector('.pc-status-dot');
     const label = this.widgetEl?.querySelector('.pc-status-label');
     if (!dot || !label) return;
-
-    if (score >= 70) {
-      dot.className = 'pc-status-dot pc-dot-green';
-      label.textContent = 'Strong';
-    } else if (score >= 40) {
-      dot.className = 'pc-status-dot pc-dot-yellow';
-      label.textContent = 'Needs work';
-    } else if (score > 0) {
-      dot.className = 'pc-status-dot pc-dot-red';
-      label.textContent = 'Weak';
-    } else {
-      dot.className = 'pc-status-dot';
-      label.textContent = 'Watching';
-    }
+    if (score >= 70) { dot.className = 'pc-status-dot pc-dot-green'; label.textContent = 'Strong'; }
+    else if (score >= 40) { dot.className = 'pc-status-dot pc-dot-yellow'; label.textContent = 'Needs work'; }
+    else if (score > 0) { dot.className = 'pc-status-dot pc-dot-red'; label.textContent = 'Weak'; }
+    else { dot.className = 'pc-status-dot'; label.textContent = 'Watching'; }
   }
 
   // ---- Contextual Hints ----
 
   showContextualHint(type) {
-    if (this.onboarding && !this.onboarding.done) return;
-
+    if (!this.onboarding.done) return;
     const hints = {
-      firstUse: {
-        text: 'Start typing a prompt — watch the score gauge update in real-time!',
-        icon: '⚡'
-      },
-      typing: {
-        text: 'Score updating! Click the whistle for detailed coaching.',
-        icon: '📊'
-      },
-      goodScore: {
-        text: 'Your prompt is getting strong! Click the whistle to see the full breakdown.',
-        icon: '💪'
-      },
-      firstCoach: {
-        text: 'Try the "Use This Prompt" button to drop the improved version right into the field.',
-        icon: '🎯'
-      }
+      firstUse:   { text: 'Start typing a prompt — watch the score gauge update in real-time!', icon: '⚡' },
+      typing:     { text: 'Score updating! Click the widget for detailed coaching.', icon: '📊' },
+      goodScore:  { text: 'Your prompt is getting strong! Click for the full breakdown.', icon: '💪' },
+      firstCoach: { text: 'Try "Use This Prompt" to drop the improved version into the field.', icon: '🎯' }
     };
-
     const hint = hints[type];
     if (!hint) return;
 
     const el = document.createElement('div');
     el.className = 'pc-hint';
-    el.innerHTML = `
-      <span class="pc-hint-icon">${hint.icon}</span>
-      <span class="pc-hint-text">${hint.text}</span>
-      <button class="pc-hint-dismiss">✕</button>`;
+    el.innerHTML = `<span class="pc-hint-icon">${hint.icon}</span><span class="pc-hint-text">${hint.text}</span><button class="pc-hint-dismiss">✕</button>`;
 
-    // Position near widget
     if (this.widgetEl) {
       const wr = this.widgetEl.getBoundingClientRect();
       el.style.top = (wr.top - 52) + 'px';
       el.style.left = Math.max(12, wr.left - 160) + 'px';
     }
-
     el.querySelector('.pc-hint-dismiss').addEventListener('click', () => el.remove());
     document.body.appendChild(el);
-
     setTimeout(() => el.classList.add('pc-hint-show'), 10);
-    setTimeout(() => {
-      el.classList.remove('pc-hint-show');
-      setTimeout(() => el.remove(), 300);
-    }, 5000);
+    setTimeout(() => { el.classList.remove('pc-hint-show'); setTimeout(() => el.remove(), 300); }, 5000);
   }
 
   // ---- Coach Me ----
 
   async coachMe() {
-    const text = this.getPromptText().trim();
+    const text = this.readFieldText().trim();
     if (!text || text.length < 5) {
       this.toast('Write something first — even a rough draft works!');
       return;
@@ -685,18 +466,18 @@ class PromptCoach {
     this.panelEl.className = 'pc-panel';
 
     if (data.loading) {
-      this.panelEl.innerHTML = this.panelShell('Coach is reviewing the tape…',
+      this.panelEl.innerHTML = this.shell('Coach is reviewing the tape…',
         `<div class="pc-loading"><span></span><span></span><span></span></div>`);
     } else if (data.error) {
-      this.panelEl.innerHTML = this.panelShell('Technical Foul!',
+      this.panelEl.innerHTML = this.shell('Technical Foul!',
         `<div class="pc-error">${esc(data.error)}</div>`);
     } else {
-      this.panelEl.innerHTML = this.buildResultPanel(data.result);
+      this.panelEl.innerHTML = this.buildResult(data.result);
     }
 
     this.panelEl.querySelector('.pc-close')?.addEventListener('click', () => this.hidePanel());
-    this._escHandler = (e) => { if (e.key === 'Escape') this.hidePanel(); };
-    document.addEventListener('keydown', this._escHandler);
+    this._escH = (e) => { if (e.key === 'Escape') this.hidePanel(); };
+    document.addEventListener('keydown', this._escH);
     document.body.appendChild(this.panelEl);
 
     if (data.result) {
@@ -713,26 +494,20 @@ class PromptCoach {
   }
 
   hidePanel() {
-    this.panelEl?.remove();
-    this.panelEl = null;
-    if (this._escHandler) {
-      document.removeEventListener('keydown', this._escHandler);
-      this._escHandler = null;
-    }
+    this.panelEl?.remove(); this.panelEl = null;
+    if (this._escH) { document.removeEventListener('keydown', this._escH); this._escH = null; }
   }
 
-  panelShell(title, body) {
+  shell(title, body) {
     return `<div class="pc-panel-inner">
       <div class="pc-header">
         <div class="pc-title">${whistleSVG(24)}<span>${esc(title)}</span></div>
         <button class="pc-close">&times;</button>
-      </div>
-      ${body}
-    </div>`;
+      </div>${body}</div>`;
   }
 
-  buildResultPanel(r) {
-    const scoreBar = (label, d) => {
+  buildResult(r) {
+    const bar = (label, d) => {
       if (!d) return '';
       const cls = d.score >= 70 ? 'good' : d.score >= 40 ? 'ok' : 'weak';
       return `<div class="pc-row">
@@ -742,31 +517,30 @@ class PromptCoach {
         <span class="pc-fb">${esc(d.feedback || '')}</span>
       </div>`;
     };
-
-    const overallCls = r.overall_score >= 70 ? 'good' : r.overall_score >= 40 ? 'ok' : 'weak';
-    const highlights = (r.highlights || []).map(h => `
+    const oc = r.overall_score >= 70 ? 'good' : r.overall_score >= 40 ? 'ok' : 'weak';
+    const hls = (r.highlights || []).map(h => `
       <div class="pc-hl">
         <div class="pc-hl-orig">"${esc(h.original)}"</div>
         <div class="pc-hl-issue">${esc(h.issue)}</div>
         <div class="pc-hl-fix">${esc(h.fix)}</div>
       </div>`).join('');
 
-    return this.panelShell("Coach's Playbook", `
+    return this.shell("Coach's Playbook", `
       <div class="pc-says">"${esc(r.coach_says)}"</div>
       <div class="pc-scores">
-        ${scoreBar('Goal', r.scores?.goal)}
-        ${scoreBar('Role', r.scores?.role)}
-        ${scoreBar('Context', r.scores?.context)}
-        ${scoreBar('Constraints', r.scores?.constraints)}
-        ${scoreBar('Format', r.scores?.format)}
-        ${scoreBar('Examples', r.scores?.examples)}
+        ${bar('Goal', r.scores?.goal)}
+        ${bar('Role', r.scores?.role)}
+        ${bar('Context', r.scores?.context)}
+        ${bar('Constraints', r.scores?.constraints)}
+        ${bar('Format', r.scores?.format)}
+        ${bar('Examples', r.scores?.examples)}
       </div>
       <div class="pc-overall">
         <span class="pc-overall-lbl">Overall</span>
-        <span class="pc-overall-num pc-${overallCls}">${r.overall_score}</span>
+        <span class="pc-overall-num pc-${oc}">${r.overall_score}</span>
       </div>
       ${r.model_tip ? `<div class="pc-tip"><strong>Scouting Report (${esc(this.platform.model)}):</strong> ${esc(r.model_tip)}</div>` : ''}
-      ${highlights ? `<div class="pc-hls"><div class="pc-sec">Play-by-Play Review</div>${highlights}</div>` : ''}
+      ${hls ? `<div class="pc-hls"><div class="pc-sec">Play-by-Play Review</div>${hls}</div>` : ''}
       <div class="pc-improved">
         <div class="pc-sec">The Improved Play</div>
         <div class="pc-improved-text">${esc(r.improved_prompt)}</div>
@@ -774,25 +548,22 @@ class PromptCoach {
           <button class="pc-copy">Copy</button>
           <button class="pc-use">Use This Prompt</button>
         </div>
-      </div>
-    `);
+      </div>`);
   }
 
-  // ---- Helpers ----
-
   insertPrompt(text) {
-    if (!this.promptField) return;
-    if (this.promptField.tagName === 'TEXTAREA' || this.promptField.tagName === 'INPUT') {
-      const proto = this.promptField.tagName === 'TEXTAREA'
-        ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-      Object.getOwnPropertyDescriptor(proto, 'value').set.call(this.promptField, text);
-      this.promptField.dispatchEvent(new Event('input', { bubbles: true }));
+    const field = this.findField();
+    if (!field) return;
+    if (field.tagName === 'TEXTAREA' || field.tagName === 'INPUT') {
+      const proto = field.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      Object.getOwnPropertyDescriptor(proto, 'value').set.call(field, text);
+      field.dispatchEvent(new Event('input', { bubbles: true }));
     } else {
-      this.promptField.innerHTML = '';
+      field.innerHTML = '';
       const p = document.createElement('p');
       p.textContent = text;
-      this.promptField.appendChild(p);
-      this.promptField.dispatchEvent(new InputEvent('input', { bubbles: true }));
+      field.appendChild(p);
+      field.dispatchEvent(new InputEvent('input', { bubbles: true }));
     }
   }
 
@@ -802,12 +573,8 @@ class PromptCoach {
     el.textContent = msg;
     document.body.appendChild(el);
     requestAnimationFrame(() => el.classList.add('pc-toast-on'));
-    setTimeout(() => {
-      el.classList.remove('pc-toast-on');
-      setTimeout(() => el.remove(), 300);
-    }, 2500);
+    setTimeout(() => { el.classList.remove('pc-toast-on'); setTimeout(() => el.remove(), 300); }, 2500);
   }
 }
 
-// Boot
 new PromptCoach();
