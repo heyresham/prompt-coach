@@ -55,33 +55,26 @@ const PLATFORMS = {
 
 function whistleSVG(size = 40) {
   return `<svg class="pc-whistle-svg" width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- Lanyard - black referee cord -->
-    <path d="M56 18 C62 4, 74 4, 70 18" stroke="#1a1a1a" fill="none" stroke-width="3.5" stroke-linecap="round"/>
-    <path d="M56 18 C62 4, 74 4, 70 18" stroke="#333" fill="none" stroke-width="2" stroke-linecap="round"/>
-    <!-- Ring - chrome -->
-    <circle cx="63" cy="14" r="4.5" fill="none" stroke="#bbb" stroke-width="2.5"/>
-    <circle cx="63" cy="14" r="4.5" fill="none" stroke="#ddd" stroke-width="1" opacity=".4"/>
-    <!-- Body - gold referee whistle -->
-    <path d="M10 38 C6 38, 4 43, 4 50 C4 57, 6 62, 10 62 L66 62 C73 62, 78 58, 78 50 C78 42, 73 38, 66 38 Z" fill="#D4A017" stroke="#B8860B" stroke-width="1.5"/>
-    <!-- Metallic sheen -->
-    <path d="M10 38 C6 38, 4 43, 4 50 L66 50 C73 50, 78 46, 78 42 C78 40, 73 38, 66 38 Z" fill="#E5C73A" opacity=".3"/>
-    <!-- Grip ridges -->
-    <line x1="26" y1="38" x2="26" y2="62" stroke="#B8860B" stroke-width="1.5" opacity=".5"/>
-    <line x1="30" y1="38" x2="30" y2="62" stroke="#E5C73A" stroke-width=".8" opacity=".35"/>
-    <line x1="60" y1="38" x2="60" y2="62" stroke="#B8860B" stroke-width="1.5" opacity=".5"/>
-    <line x1="64" y1="38" x2="64" y2="62" stroke="#E5C73A" stroke-width=".8" opacity=".35"/>
-    <!-- Mouthpiece -->
-    <path d="M75 43 L90 43 C93 43, 96 45, 96 48 L96 52 C96 55, 93 57, 90 57 L75 57" fill="#C9A029" stroke="#B8860B" stroke-width="1.5"/>
-    <rect x="94" y="46" width="4" height="8" rx="2" fill="#B8860B"/>
-    <!-- Sound slot -->
-    <ellipse cx="8" cy="50" rx="3.5" ry="5.5" fill="#5a4a10"/>
-    <!-- Eyes -->
-    <ellipse cx="40" cy="49" rx="8" ry="9" fill="white"/>
-    <circle cx="42" cy="49" r="5" fill="#1a1a1a"/>
-    <circle cx="43.5" cy="47" r="2" fill="white"/>
-    <ellipse cx="54" cy="49" rx="8" ry="9" fill="white"/>
-    <circle cx="56" cy="49" r="5" fill="#1a1a1a"/>
-    <circle cx="57.5" cy="47" r="2" fill="white"/>
+    <!-- Ring -->
+    <circle cx="86" cy="58" r="7" fill="none" stroke="#A0A8B0" stroke-width="3.5"/>
+    <circle cx="86" cy="58" r="7" fill="none" stroke="#D8E0E8" stroke-width="1.2" opacity=".5"/>
+    <!-- Mouthpiece barrel -->
+    <path d="M54 48 L78 50 C82 50.5, 84 53, 84 58 C84 63, 82 65, 78 65.5 L54 68" fill="#B0B8C4" stroke="#8890A0" stroke-width="1.5"/>
+    <path d="M54 48 L78 50 C82 50.5, 84 53, 84 55 L54 52" fill="#D8E0E8" opacity=".35"/>
+    <!-- Pea chamber body -->
+    <rect x="8" y="40" width="50" height="34" rx="5" fill="#C0C8D4" stroke="#8890A0" stroke-width="1.5"/>
+    <rect x="8" y="40" width="50" height="12" rx="5" fill="#E0E8F0" opacity=".25"/>
+    <rect x="8" y="62" width="50" height="12" rx="5" fill="#707880" opacity=".12"/>
+    <!-- Air slot -->
+    <rect x="6" y="54" width="50" height="7" rx="3" fill="#3a4250" stroke="#2a3240" stroke-width=".5"/>
+    <rect x="8" y="55" width="46" height="2.5" rx="1" fill="#1a2030" opacity=".4"/>
+    <!-- Googly eyes ON TOP -->
+    <circle cx="26" cy="34" r="10" fill="white" stroke="#ccc" stroke-width="1.5"/>
+    <circle cx="28.5" cy="34" r="6" fill="#1a1a1a"/>
+    <circle cx="30" cy="31.5" r="2.5" fill="white"/>
+    <circle cx="44" cy="34" r="10" fill="white" stroke="#ccc" stroke-width="1.5"/>
+    <circle cx="46.5" cy="34" r="6" fill="#1a1a1a"/>
+    <circle cx="48" cy="31.5" r="2.5" fill="white"/>
   </svg>`;
 }
 
@@ -572,10 +565,9 @@ class PromptCoach {
       if (!d) return '';
       const cls = d.score >= 70 ? 'good' : d.score >= 40 ? 'ok' : 'weak';
       return `<div class="pc-row">
-        <span class="pc-label">${label}</span>
+        <div class="pc-label"><span>${label}</span><span class="pc-val">${d.score}</span></div>
         <div class="pc-track"><div class="pc-fill pc-${cls}" style="width:${d.score}%"></div></div>
-        <span class="pc-val">${d.score}</span>
-        <span class="pc-fb">${esc(d.feedback || '')}</span>
+        <div class="pc-fb">${esc(d.feedback || '')}</div>
       </div>`;
     };
     const oc = r.overall_score >= 70 ? 'good' : r.overall_score >= 40 ? 'ok' : 'weak';
@@ -600,7 +592,7 @@ class PromptCoach {
         <span class="pc-overall-lbl">Overall</span>
         <span class="pc-overall-num pc-${oc}">${r.overall_score}</span>
       </div>
-      ${r.model_tip ? `<div class="pc-tip"><strong>Scouting Report (${esc(this.platform.model)}):</strong> ${esc(r.model_tip)}</div>` : ''}
+      ${r.model_tip ? `<div class="pc-tip"><strong>Pro Tip</strong> ${esc(r.model_tip)}</div>` : ''}
       ${hls ? `<div class="pc-hls"><div class="pc-sec">Play-by-Play Review</div>${hls}</div>` : ''}
       <div class="pc-improved">
         <div class="pc-sec">The Improved Play</div>
