@@ -263,27 +263,69 @@ class PromptCoach {
     return null;
   }
 
-  // Find the prompt field RIGHT NOW — never cache the reference
+  // Find the prompt field RIGHT NOW — never cache the reference.
+  // Strategy: gather all candidates, score them, return the best one.
   findField() {
+    const candidates = new Set();
+
+    // Platform-specific selectors
     for (const sel of this.platform.selectors) {
-      const els = document.querySelectorAll(sel);
-      for (const el of els) {
-        const rect = el.getBoundingClientRect();
-        if (rect.width < 80 || rect.height < 15) continue;
-        if (rect.bottom < 0 || rect.top > window.innerHeight) continue;
-        const style = getComputedStyle(el);
-        if (style.display === 'none' || style.visibility === 'hidden') continue;
-        return el;
+      try { document.querySelectorAll(sel).forEach(el => candidates.add(el)); } catch {}
+    }
+
+    // Universal fallbacks
+    document.querySelectorAll(
+      'textarea, [contenteditable="true"], [role="textbox"], input[type="text"]'
+    ).forEach(el => candidates.add(el));
+
+    let best = null;
+    let bestScore = -1;
+
+    for (const el of candidates) {
+      // Skip our own elements
+      if (el.closest('.pc-widget, .pc-panel, .pc-onboard-overlay, .pc-hint, .pc-toast')) continue;
+
+      const rect = el.getBoundingClientRect();
+      if (rect.width < 50 || rect.height < 10) continue;
+
+      const style = getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') continue;
+
+      let score = 0;
+
+      // Prefer elements with text content (strong signal — user is typing there)
+      const text = this.getElText(el);
+      if (text.trim().length > 0) score += 10000;
+
+      // Prefer elements lower on the page (prompt fields are at the bottom)
+      score += rect.top;
+
+      // Prefer larger elements (prompt fields are wide)
+      score += rect.width * 0.5;
+
+      // Prefer known prompt field IDs/classes
+      if (el.id === 'prompt-textarea') score += 50000;
+      if (el.classList.contains('ProseMirror')) score += 40000;
+      if (el.getAttribute('role') === 'textbox') score += 30000;
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = el;
       }
     }
-    return null;
+
+    return best;
+  }
+
+  getElText(el) {
+    if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') return el.value || '';
+    return el.innerText || el.textContent || '';
   }
 
   readFieldText() {
     const field = this.findField();
     if (!field) return '';
-    if (field.tagName === 'TEXTAREA' || field.tagName === 'INPUT') return field.value;
-    return field.innerText || field.textContent || '';
+    return this.getElText(field);
   }
 
   init() {
