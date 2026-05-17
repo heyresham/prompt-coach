@@ -1,40 +1,67 @@
 /* ==========================================================================
-   Prompt Coach — Injected Styles
-   All rules use !important + pc- namespace to avoid host-page conflicts.
+   Prompt Coach v2 — Content Styles
+   Fixed-position widget, onboarding, contextual hints, coach panel.
+   All rules use !important + pc- prefix to avoid host-page conflicts.
    ========================================================================== */
 
-/* ---- Mascot ---- */
-.pc-mascot {
-  position: absolute !important;
-  bottom: 8px !important;
-  right: 56px !important;
-  z-index: 10000 !important;
+/* ===== FLOATING WIDGET (body-appended, fixed) ===== */
+.pc-widget {
+  position: fixed !important;
+  z-index: 99999 !important;
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 6px !important;
+  padding: 4px 10px 4px 6px !important;
+  background: rgba(17, 18, 20, .92) !important;
+  border: 1px solid rgba(27, 107, 62, .35) !important;
+  border-radius: 24px !important;
+  backdrop-filter: blur(8px) !important;
   cursor: pointer !important;
-  opacity: 0.6 !important;
-  transition: opacity .25s, transform .25s !important;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,.15)) !important;
+  transition: opacity .3s, transform .3s, box-shadow .3s !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25) !important;
+  opacity: 1 !important;
+  user-select: none !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
-.pc-mascot:hover { opacity: 1 !important; transform: scale(1.12) !important; }
-.pc-active.pc-mascot { opacity: 0.85 !important; }
+.pc-widget:hover {
+  box-shadow: 0 2px 18px rgba(27,107,62,.35) !important;
+  border-color: #1B6B3E !important;
+  transform: scale(1.04) !important;
+}
+.pc-widget-visible { opacity: 1 !important; }
+.pc-widget-dim { opacity: .5 !important; }
 
-/* Mascot states */
-.pc-coaching .pc-whistle-svg { animation: pc-bounce .6s ease-in-out infinite !important; }
+/* Whistle button area */
+.pc-widget-whistle {
+  display: flex !important;
+  align-items: center !important;
+  transition: transform .2s !important;
+}
+.pc-widget-whistle:hover { transform: scale(1.12) !important; }
+.pc-widget-coaching .pc-widget-whistle .pc-whistle-svg {
+  animation: pc-bounce .5s ease-in-out infinite !important;
+}
 @keyframes pc-bounce {
   0%,100% { transform: translateY(0) }
-  50%     { transform: translateY(-5px) }
+  50%     { transform: translateY(-3px) }
 }
 
-/* ---- Score gauge ---- */
+/* Score gauge */
 .pc-score-gauge {
   position: relative !important;
-  width: 30px !important;
-  height: 30px !important;
+  width: 28px !important;
+  height: 28px !important;
+  flex-shrink: 0 !important;
 }
-.pc-score-ring { width: 30px !important; height: 30px !important; transform: rotate(-90deg) !important; }
-.pc-score-bg  { fill: none !important; stroke: rgba(255,255,255,.12) !important; stroke-width: 3.5 !important; }
+.pc-score-ring {
+  width: 28px !important; height: 28px !important;
+  transform: rotate(-90deg) !important;
+}
+.pc-score-bg {
+  fill: none !important;
+  stroke: rgba(255,255,255,.1) !important;
+  stroke-width: 3.5 !important;
+}
 .pc-score-fill {
   fill: none !important;
   stroke: #6B7280 !important;
@@ -48,12 +75,237 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font: 700 9px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  font: 700 8px/1 -apple-system, sans-serif !important;
   color: #d1d5db !important;
   pointer-events: none !important;
 }
 
-/* ---- Panel (slides in from right) ---- */
+/* Status indicator */
+.pc-widget-status {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding-left: 4px !important;
+  border-left: 1px solid rgba(255,255,255,.08) !important;
+}
+.pc-status-dot {
+  width: 6px !important; height: 6px !important;
+  border-radius: 50% !important;
+  background: #6b7280 !important;
+  transition: background .3s !important;
+}
+.pc-dot-green { background: #22c55e !important; box-shadow: 0 0 6px rgba(34,197,94,.5) !important; }
+.pc-dot-yellow { background: #f59e0b !important; box-shadow: 0 0 6px rgba(245,158,11,.4) !important; }
+.pc-dot-red { background: #ef4444 !important; box-shadow: 0 0 6px rgba(239,68,68,.4) !important; }
+.pc-status-label {
+  font: 500 10px/1 -apple-system, sans-serif !important;
+  color: #9ca3af !important;
+  letter-spacing: .3px !important;
+  white-space: nowrap !important;
+}
+
+/* ===== ONBOARDING — Welcome Modal ===== */
+.pc-onboard-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 200000 !important;
+  background: rgba(0,0,0,.7) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  animation: pc-fade-in .3s ease !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+.pc-onboard-spotlight {
+  background: rgba(0,0,0,.6) !important;
+}
+@keyframes pc-fade-in { from { opacity: 0 } to { opacity: 1 } }
+
+.pc-onboard-welcome {
+  background: #1a1b1e !important;
+  border: 1px solid rgba(27,107,62,.3) !important;
+  border-radius: 16px !important;
+  padding: 36px 32px 28px !important;
+  max-width: 400px !important;
+  text-align: center !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5) !important;
+  animation: pc-scale-in .35s cubic-bezier(.16,1,.3,1) !important;
+}
+@keyframes pc-scale-in {
+  from { transform: scale(.92); opacity: 0 }
+  to   { transform: scale(1);   opacity: 1 }
+}
+
+.pc-onboard-mascot { margin-bottom: 12px !important; }
+.pc-onboard-title {
+  font: 700 22px/1.2 -apple-system, sans-serif !important;
+  color: #fff !important;
+  margin: 0 0 8px !important;
+}
+.pc-onboard-desc {
+  font: 400 14px/1.55 -apple-system, sans-serif !important;
+  color: #9ca3af !important;
+  margin: 0 0 20px !important;
+}
+.pc-onboard-features {
+  text-align: left !important;
+  margin-bottom: 24px !important;
+}
+.pc-onboard-feat {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 8px 12px !important;
+  background: rgba(255,255,255,.03) !important;
+  border-radius: 8px !important;
+  margin-bottom: 6px !important;
+  font: 400 13px/1.4 -apple-system, sans-serif !important;
+  color: #d1d5db !important;
+}
+.pc-onboard-feat-icon { font-size: 16px !important; flex-shrink: 0 !important; }
+
+.pc-onboard-actions {
+  display: flex !important;
+  gap: 10px !important;
+  justify-content: center !important;
+  margin-bottom: 16px !important;
+}
+.pc-onboard-primary {
+  all: unset !important;
+  cursor: pointer !important;
+  padding: 10px 24px !important;
+  background: #1B6B3E !important;
+  color: #fff !important;
+  font: 600 14px/1 -apple-system, sans-serif !important;
+  border-radius: 8px !important;
+  transition: background .2s !important;
+}
+.pc-onboard-primary:hover { background: #228b4f !important; }
+.pc-onboard-skip {
+  all: unset !important;
+  cursor: pointer !important;
+  padding: 10px 16px !important;
+  color: #6b7280 !important;
+  font: 500 13px/1 -apple-system, sans-serif !important;
+  border-radius: 8px !important;
+  transition: color .2s !important;
+}
+.pc-onboard-skip:hover { color: #9ca3af !important; }
+
+/* Step dots */
+.pc-onboard-step-dots {
+  display: flex !important;
+  gap: 6px !important;
+  justify-content: center !important;
+}
+.pc-onboard-step-dots span {
+  width: 6px !important; height: 6px !important;
+  border-radius: 50% !important;
+  background: rgba(255,255,255,.15) !important;
+  transition: all .2s !important;
+}
+.pc-onboard-step-dots .pc-dot-active {
+  width: 18px !important;
+  border-radius: 3px !important;
+  background: #1B6B3E !important;
+}
+
+/* ===== ONBOARDING — Tooltips ===== */
+.pc-onboard-hole {
+  position: fixed !important;
+  z-index: 200001 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,.6) !important;
+  pointer-events: none !important;
+}
+
+.pc-onboard-tip {
+  position: fixed !important;
+  z-index: 200002 !important;
+  background: #1a1b1e !important;
+  border: 1px solid rgba(27,107,62,.3) !important;
+  border-radius: 12px !important;
+  padding: 16px 18px !important;
+  max-width: 320px !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,.4) !important;
+  animation: pc-scale-in .25s cubic-bezier(.16,1,.3,1) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+.pc-onboard-tip-title {
+  font: 700 15px/1.2 -apple-system, sans-serif !important;
+  color: #fff !important;
+  margin-bottom: 6px !important;
+}
+.pc-onboard-tip-text {
+  font: 400 13px/1.5 -apple-system, sans-serif !important;
+  color: #9ca3af !important;
+  margin-bottom: 14px !important;
+}
+.pc-onboard-tip-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+.pc-onboard-tip-actions {
+  display: flex !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+/* Arrow (bottom by default) */
+.pc-onboard-arrow {
+  position: absolute !important;
+  bottom: -7px !important;
+  left: 50% !important;
+  transform: translateX(-50%) rotate(45deg) !important;
+  width: 12px !important; height: 12px !important;
+  background: #1a1b1e !important;
+  border-right: 1px solid rgba(27,107,62,.3) !important;
+  border-bottom: 1px solid rgba(27,107,62,.3) !important;
+}
+.pc-onboard-arrow.pc-arrow-top {
+  top: -7px !important; bottom: auto !important;
+  transform: translateX(-50%) rotate(-135deg) !important;
+}
+
+/* ===== CONTEXTUAL HINTS ===== */
+.pc-hint {
+  position: fixed !important;
+  z-index: 100001 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 14px !important;
+  background: #1a1b1e !important;
+  border: 1px solid rgba(27,107,62,.25) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.35) !important;
+  opacity: 0 !important;
+  transform: translateY(8px) !important;
+  transition: opacity .3s, transform .3s !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  max-width: 340px !important;
+}
+.pc-hint-show {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+.pc-hint-icon { font-size: 16px !important; flex-shrink: 0 !important; }
+.pc-hint-text {
+  font: 400 12px/1.45 -apple-system, sans-serif !important;
+  color: #d1d5db !important;
+}
+.pc-hint-dismiss {
+  all: unset !important;
+  cursor: pointer !important;
+  color: #6b7280 !important;
+  font-size: 12px !important;
+  padding: 2px !important;
+  flex-shrink: 0 !important;
+}
+.pc-hint-dismiss:hover { color: #fff !important; }
+
+/* ===== COACH PANEL (slide from right) ===== */
 .pc-panel {
   position: fixed !important;
   top: 0 !important; right: 0 !important;
@@ -76,7 +328,6 @@
   line-height: 1.55 !important;
 }
 
-/* Header */
 .pc-header {
   display: flex !important;
   align-items: center !important;
@@ -89,7 +340,7 @@
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  font: 700 16px/1.2 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  font: 700 16px/1.2 -apple-system, sans-serif !important;
   color: #fff !important;
 }
 .pc-close {
@@ -249,7 +500,7 @@
 }
 .pc-use:hover { background: #228b4f !important; }
 
-/* Loading dots */
+/* Loading */
 .pc-loading {
   display: flex !important;
   justify-content: center !important;
