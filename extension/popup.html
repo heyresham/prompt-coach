@@ -28,15 +28,18 @@
     </div>
 
     <div class="card">
-      <label for="provider">AI Provider</label>
+      <label for="provider">Mode</label>
       <select id="provider">
+        <option value="demo">Demo Mode (no API key needed)</option>
         <option value="openai">OpenAI (GPT-4o-mini)</option>
         <option value="anthropic">Anthropic (Claude Sonnet)</option>
       </select>
 
-      <label for="apiKey">API Key</label>
-      <input type="password" id="apiKey" placeholder="sk-… or sk-ant-…">
-      <p class="hint">Stored locally. Never leaves your machine.</p>
+      <div id="apiSection" style="display:none">
+        <label for="apiKey">API Key</label>
+        <input type="password" id="apiKey" placeholder="sk-… or sk-ant-…">
+        <p class="hint">Stored locally. Never leaves your machine.</p>
+      </div>
 
       <button id="save" class="btn-primary">Save Settings</button>
       <div id="status" class="status" role="status"></div>

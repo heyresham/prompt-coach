@@ -1,21 +1,33 @@
 const provider = document.getElementById('provider');
 const apiKey = document.getElementById('apiKey');
+const apiSection = document.getElementById('apiSection');
 const save = document.getElementById('save');
 const status = document.getElementById('status');
 
 chrome.storage.sync.get(['apiKey', 'apiProvider'], (data) => {
-  if (data.apiProvider) provider.value = data.apiProvider;
+  provider.value = data.apiProvider || 'demo';
   if (data.apiKey) apiKey.value = data.apiKey;
+  toggleApiSection();
 });
 
+provider.addEventListener('change', toggleApiSection);
+
+function toggleApiSection() {
+  apiSection.style.display = provider.value === 'demo' ? 'none' : 'block';
+}
+
 save.addEventListener('click', () => {
-  const key = apiKey.value.trim();
-  if (!key) {
-    flash('Enter an API key first.', true);
+  if (provider.value !== 'demo' && !apiKey.value.trim()) {
+    flash('Enter an API key, or switch to Demo Mode.', true);
     return;
   }
-  chrome.storage.sync.set({ apiKey: key, apiProvider: provider.value }, () => {
-    flash('Saved! You\'re in the game.');
+  chrome.storage.sync.set({
+    apiKey: provider.value === 'demo' ? '' : apiKey.value.trim(),
+    apiProvider: provider.value
+  }, () => {
+    flash(provider.value === 'demo'
+      ? 'Demo mode active — go test it out!'
+      : 'Saved! You\'re in the game.');
   });
 });
 

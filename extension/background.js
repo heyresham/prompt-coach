@@ -17,8 +17,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function handleCoachRequest(prompt, platform, model) {
   const { apiKey, apiProvider } = await chrome.storage.sync.get(['apiKey', 'apiProvider']);
 
-  if (!apiKey) {
-    return { error: 'No API key set. Click the Prompt Coach extension icon to add one.' };
+  if (!apiKey || apiProvider === 'demo') {
+    return generateDemoResponse(prompt, platform, model);
   }
 
   const systemPrompt = buildSystemPrompt(platform, model);
@@ -27,6 +27,82 @@ async function handleCoachRequest(prompt, platform, model) {
     return callAnthropic(apiKey, systemPrompt, prompt);
   }
   return callOpenAI(apiKey, systemPrompt, prompt);
+}
+
+function generateDemoResponse(prompt, platform, model) {
+  const lower = prompt.toLowerCase();
+  const len = prompt.length;
+
+  const hasGoal = /\b(write|create|generate|explain|analyze|summarize|list|compare|design|build|help|review|suggest|describe|debug|implement|draft|outline)\b/.test(lower);
+  const hasRole = /\b(you are|act as|as a|pretend|role of|expert|specialist|you're a|imagine you)\b/.test(lower);
+  const hasContext = /\b(because|context|background|i am|i'm working|the goal|i need|i want|my project|we are|currently|given that)\b/.test(lower);
+  const hasConstraints = /\b(don't|do not|avoid|must|should not|limit|only|no more than|without|ensure|make sure)\b/.test(lower);
+  const hasFormat = /\b(format|table|list|bullet|json|csv|markdown|step by step|numbered|code block|sections|outline)\b/.test(lower);
+  const hasExamples = /\b(for example|e\.g\.|such as|like this|here's an example|for instance|example:|sample)\b/.test(lower);
+
+  const score = (has, base) => has ? Math.min(base + Math.floor(Math.random() * 20), 95) : Math.floor(Math.random() * 25) + 5;
+
+  const scores = {
+    goal:        { score: score(hasGoal, 60),        feedback: hasGoal ? 'Clear ask — the model knows what you want.' : 'What exactly do you want the AI to produce? Be specific.' },
+    role:        { score: score(hasRole, 55),        feedback: hasRole ? 'Good — you gave the AI an identity to work from.' : 'Try assigning a role: "Act as a senior developer…"' },
+    context:     { score: score(hasContext, 55),     feedback: hasContext ? 'Solid background info for the model to work with.' : 'Add context — what\'s the situation, who\'s the audience?' },
+    constraints: { score: score(hasConstraints, 55), feedback: hasConstraints ? 'Nice boundaries — keeps the output focused.' : 'Set some guardrails: length, tone, things to avoid.' },
+    format:      { score: score(hasFormat, 60),      feedback: hasFormat ? 'Output format specified — no guesswork for the model.' : 'Tell it what shape the answer should take: list, table, essay?' },
+    examples:    { score: score(hasExamples, 55),    feedback: hasExamples ? 'Examples give the model a target to aim for.' : 'Show an example of what "good" looks like — even a short one helps.' }
+  };
+
+  const overall = Math.round(Object.values(scores).reduce((s, d) => s + d.score, 0) / 6);
+
+  const coachLines = {
+    low:  [
+      "Timeout! You're running onto the field without a game plan. Let's draw up a proper play.",
+      "Whistle! That prompt is a Hail Mary — let's turn it into a designed play.",
+      "Hold up, rookie! You've got heart, but this prompt needs fundamentals."
+    ],
+    mid:  [
+      "Decent first drive! A few adjustments and you'll be in the red zone.",
+      "Good hustle — you're moving the ball. Let's tighten up the weak spots.",
+      "Solid start, but we're leaving points on the board. Let's fix that."
+    ],
+    high: [
+      "Textbook execution! Clean reads, great fundamentals. Almost ready to send.",
+      "Now THAT's championship-caliber prompting. Just minor tweaks left.",
+      "You're in the zone! This prompt has all the right moves."
+    ]
+  };
+
+  const tier = overall >= 65 ? 'high' : overall >= 40 ? 'mid' : 'low';
+  const lines = coachLines[tier];
+  const coachSays = lines[Math.floor(Math.random() * lines.length)];
+
+  const modelTips = {
+    'ChatGPT':    `GPT responds well to conversational framing. Try: "Let's work through this together…" instead of just issuing a command.`,
+    'Claude':     `Claude loves XML tags for structure. Wrap key sections in <context>, <constraints>, <format> tags for sharper results.`,
+    'Gemini':     `Gemini excels at reasoning tasks. Explicitly ask it to "think step by step" or "show your reasoning" for better outputs.`,
+    'Perplexity': `Perplexity is search-augmented — be specific about what facts you need and ask it to cite sources.`,
+    'Copilot':    `Copilot works best with direct, task-focused prompts. Skip the preamble and get to the point.`
+  };
+
+  const highlights = [];
+  if (!hasRole) highlights.push({ original: prompt.slice(0, 40) + (prompt.length > 40 ? '…' : ''), issue: 'No role assigned — the AI doesn\'t know what expert hat to wear.', fix: 'Start with "Act as a [role]…" to set the AI\'s expertise and tone.' });
+  if (!hasFormat) highlights.push({ original: 'the entire prompt', issue: 'No output format specified — you\'ll get whatever shape the model defaults to.', fix: 'Add "Format the response as a [bullet list / table / code block]."' });
+  if (!hasConstraints) highlights.push({ original: 'the entire prompt', issue: 'No constraints — the model has no boundaries on length, tone, or scope.', fix: 'Add limits: "Keep it under 200 words" or "Avoid jargon."' });
+
+  const improved = [
+    hasRole ? '' : 'Act as an experienced assistant. ',
+    prompt,
+    hasFormat ? '' : '\n\nFormat your response as a clear, structured breakdown.',
+    hasConstraints ? '' : ' Keep it concise and actionable.'
+  ].join('').trim();
+
+  return {
+    scores,
+    overall_score: overall,
+    coach_says: coachSays,
+    model_tip: modelTips[platform] || modelTips['ChatGPT'],
+    highlights,
+    improved_prompt: improved
+  };
 }
 
 function buildSystemPrompt(platform, model) {
