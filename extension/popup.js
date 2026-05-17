@@ -31,6 +31,12 @@ save.addEventListener('click', () => {
   });
 });
 
+document.getElementById('resetOnboarding').addEventListener('click', () => {
+  chrome.storage.sync.remove('onboardingDone', () => {
+    flash('Onboarding reset! Refresh any AI page to see the tour again.');
+  });
+});
+
 function flash(msg, isError) {
   status.textContent = msg;
   status.className = 'status ' + (isError ? 'err' : 'ok');

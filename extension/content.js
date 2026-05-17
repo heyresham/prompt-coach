@@ -333,9 +333,18 @@ class PromptCoach {
   }
 
   observeDOM() {
+    let detachTimeout = null;
     new MutationObserver(() => {
+      // Debounce detach — ChatGPT re-renders rapidly and briefly removes elements
       if (this.promptField && !document.contains(this.promptField)) {
-        this.detach();
+        if (!detachTimeout) {
+          detachTimeout = setTimeout(() => {
+            detachTimeout = null;
+            if (this.promptField && !document.contains(this.promptField)) {
+              this.detach();
+            }
+          }, 500);
+        }
       }
       if (!this.promptField) this.tryAttach();
     }).observe(document.body, { childList: true, subtree: true });
@@ -395,8 +404,7 @@ class PromptCoach {
 
   detach() {
     this.promptField = null;
-    this.widgetEl?.remove();
-    this.widgetEl = null;
+    // Keep widget visible — just stop tracking the old field
     this.fieldObserver?.disconnect();
     this.fieldObserver = null;
     if (this.positionRAF) cancelAnimationFrame(this.positionRAF);
@@ -415,12 +423,23 @@ class PromptCoach {
   // ---- Widget (body-appended, fixed position) ----
 
   createWidget() {
+    // Don't recreate if already exists and is in the DOM
+    if (this.widgetEl && document.contains(this.widgetEl)) return;
     this.widgetEl?.remove();
 
     this.widgetEl = document.createElement('div');
-    this.widgetEl.className = 'pc-widget';
+    this.widgetEl.className = 'pc-widget pc-widget-entrance';
+
+    // Inline styles guarantee visibility even if stylesheet fails
+    this.widgetEl.style.cssText = `
+      position:fixed !important; z-index:2147483647 !important;
+      bottom:80px !important; right:24px !important;
+      display:flex !important; opacity:1 !important;
+      pointer-events:auto !important;
+    `;
+
     this.widgetEl.innerHTML = `
-      <div class="pc-widget-whistle">${whistleSVG(34)}</div>
+      <div class="pc-widget-whistle" title="Click to get coached! (Ctrl+Shift+P)">${whistleSVG(34)}</div>
       <div class="pc-score-gauge">
         <svg viewBox="0 0 36 36" class="pc-score-ring">
           <path class="pc-score-bg"
@@ -443,28 +462,58 @@ class PromptCoach {
     });
 
     document.body.appendChild(this.widgetEl);
+
+    // Remove entrance animation class after it plays
+    setTimeout(() => this.widgetEl?.classList.remove('pc-widget-entrance'), 800);
   }
 
   startPositionTracking() {
+    // Widget uses fixed bottom/right via inline styles.
+    // Optionally nudge it near the prompt field if we can see it.
     const update = () => {
-      if (this.promptField && this.widgetEl && document.contains(this.promptField)) {
+      if (!this.widgetEl) return;
+      if (this.promptField && document.contains(this.promptField)) {
         const rect = this.promptField.getBoundingClientRect();
-        // Bottom-right of the prompt field, offset inward
-        this.widgetEl.style.top = (rect.bottom - 44) + 'px';
-        this.widgetEl.style.left = (rect.right - 130) + 'px';
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // Only reposition if the prompt field rect looks valid
+        if (rect.width > 100 && rect.height > 10 &&
+            rect.bottom > 0 && rect.top < vh &&
+            rect.right > 0 && rect.left < vw) {
+
+          const widgetW = this.widgetEl.offsetWidth || 140;
+          const widgetH = this.widgetEl.offsetHeight || 40;
+
+          let top = rect.bottom - widgetH - 6;
+          let left = rect.right - widgetW - 12;
+
+          // Clamp inside viewport
+          top = Math.max(8, Math.min(top, vh - widgetH - 8));
+          left = Math.max(8, Math.min(left, vw - widgetW - 8));
+
+          // Switch from bottom/right to top/left positioning
+          this.widgetEl.style.bottom = 'auto';
+          this.widgetEl.style.right = 'auto';
+          this.widgetEl.style.top = top + 'px';
+          this.widgetEl.style.left = left + 'px';
+        }
       }
       this.positionRAF = requestAnimationFrame(update);
     };
-    this.positionRAF = requestAnimationFrame(update);
+    // Small delay to let the widget render with its default position first
+    setTimeout(() => { this.positionRAF = requestAnimationFrame(update); }, 300);
   }
 
   showWidget() {
-    this.widgetEl?.classList.remove('pc-widget-dim');
-    this.widgetEl?.classList.add('pc-widget-visible');
+    if (!this.widgetEl) return;
+    this.widgetEl.style.opacity = '1';
+    this.widgetEl.classList.remove('pc-widget-dim');
   }
 
   dimWidget() {
-    this.widgetEl?.classList.add('pc-widget-dim');
+    if (!this.widgetEl) return;
+    this.widgetEl.style.opacity = '0.6';
   }
 
   // ---- Input + Scoring ----

@@ -7,29 +7,41 @@
 /* ===== FLOATING WIDGET (body-appended, fixed) ===== */
 .pc-widget {
   position: fixed !important;
-  z-index: 99999 !important;
+  z-index: 2147483647 !important;
+  bottom: 80px !important;
+  right: 24px !important;
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
   padding: 4px 10px 4px 6px !important;
-  background: rgba(17, 18, 20, .92) !important;
-  border: 1px solid rgba(27, 107, 62, .35) !important;
+  background: rgba(17, 18, 20, .95) !important;
+  border: 1px solid rgba(27, 107, 62, .45) !important;
   border-radius: 24px !important;
   backdrop-filter: blur(8px) !important;
   cursor: pointer !important;
   transition: opacity .3s, transform .3s, box-shadow .3s !important;
-  box-shadow: 0 2px 12px rgba(0,0,0,.25) !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,.4) !important;
   opacity: 1 !important;
   user-select: none !important;
+  pointer-events: auto !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 .pc-widget:hover {
-  box-shadow: 0 2px 18px rgba(27,107,62,.35) !important;
+  box-shadow: 0 2px 20px rgba(27,107,62,.45) !important;
   border-color: #1B6B3E !important;
-  transform: scale(1.04) !important;
+  transform: scale(1.05) !important;
 }
-.pc-widget-visible { opacity: 1 !important; }
-.pc-widget-dim { opacity: .5 !important; }
+.pc-widget-dim { opacity: .6 !important; }
+
+/* Entrance animation — draws attention on first appearance */
+.pc-widget-entrance {
+  animation: pc-widget-pop .6s cubic-bezier(.16,1,.3,1) !important;
+}
+@keyframes pc-widget-pop {
+  0%   { transform: scale(0) translateY(20px); opacity: 0 }
+  60%  { transform: scale(1.08) translateY(-2px); opacity: 1 }
+  100% { transform: scale(1) translateY(0); opacity: 1 }
+}
 
 /* Whistle button area */
 .pc-widget-whistle {

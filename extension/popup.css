@@ -92,6 +92,19 @@ select:focus, input:focus {
 }
 .btn-primary:hover { background: #228b4f; }
 
+.btn-secondary {
+  width: 100%;
+  padding: 8px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  color: #9ca3af;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.btn-secondary:hover { background: rgba(255,255,255,.1); color: #e5e7eb; }
+
 /* Status */
 .status {
   text-align: center;
