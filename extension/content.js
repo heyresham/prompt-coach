@@ -130,19 +130,13 @@ class Onboarding {
     this.done = false;
   }
 
-  async shouldShow() {
-    return new Promise(resolve => {
-      chrome.storage.sync.get(['onboardingDone'], data => resolve(!data.onboardingDone));
-    });
-  }
-
+  // DEV MODE: always show onboarding for testing.
+  // TODO: restore storage check when onboarding is finalized.
   markDone() {
     this.done = true;
-    chrome.storage.sync.set({ onboardingDone: true });
   }
 
   async start() {
-    if (!(await this.shouldShow())) { this.done = true; return; }
     this.showStep(0);
   }
 
@@ -185,6 +179,8 @@ class Onboarding {
       </div>`;
     this.overlay.querySelector('.pc-onboard-primary').addEventListener('click', () => this.showStep(1));
     this.overlay.querySelector('.pc-onboard-skip').addEventListener('click', () => { this.markDone(); this.clear(); });
+    // Click backdrop to dismiss
+    this.overlay.addEventListener('click', (e) => { if (e.target === this.overlay) { this.markDone(); this.clear(); } });
     document.body.appendChild(this.overlay);
   }
 
@@ -270,7 +266,7 @@ class PromptCoach {
 
     // Platform-specific selectors
     for (const sel of this.platform.selectors) {
-      try { document.querySelectorAll(sel).forEach(el => candidates.add(el)); } catch {}
+      try { document.querySelectorAll(sel).forEach(el => candidates.add(el)); } catch (e) { /* invalid selector */ }
     }
 
     // Universal fallbacks
@@ -492,7 +488,7 @@ class PromptCoach {
           this.hintShown.firstCoach = true;
         }
       }
-    } catch {
+    } catch (err) {
       this.showPanel({ error: 'Could not reach Prompt Coach. Check your settings in the extension popup.' });
     } finally {
       this.isCoaching = false;

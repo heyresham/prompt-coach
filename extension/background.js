@@ -215,7 +215,7 @@ function parseCoachResponse(text) {
   }
   try {
     return JSON.parse(cleaned);
-  } catch {
+  } catch (e) {
     return { error: 'Coach got tongue-tied. Try again.' };
   }
 }
