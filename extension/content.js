@@ -56,25 +56,25 @@ const PLATFORMS = {
 function whistleSVG(size = 40) {
   return `<svg class="pc-whistle-svg" width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <!-- Ring -->
-    <circle cx="86" cy="58" r="7" fill="none" stroke="#A0A8B0" stroke-width="3.5"/>
-    <circle cx="86" cy="58" r="7" fill="none" stroke="#D8E0E8" stroke-width="1.2" opacity=".5"/>
-    <!-- Mouthpiece barrel -->
-    <path d="M54 48 L78 50 C82 50.5, 84 53, 84 58 C84 63, 82 65, 78 65.5 L54 68" fill="#B0B8C4" stroke="#8890A0" stroke-width="1.5"/>
-    <path d="M54 48 L78 50 C82 50.5, 84 53, 84 55 L54 52" fill="#D8E0E8" opacity=".35"/>
-    <!-- Pea chamber body -->
-    <rect x="8" y="40" width="50" height="34" rx="5" fill="#C0C8D4" stroke="#8890A0" stroke-width="1.5"/>
-    <rect x="8" y="40" width="50" height="12" rx="5" fill="#E0E8F0" opacity=".25"/>
-    <rect x="8" y="62" width="50" height="12" rx="5" fill="#707880" opacity=".12"/>
+    <circle cx="89" cy="62" r="6.5" fill="none" stroke="#B0B8C0" stroke-width="3"/>
+    <circle cx="89" cy="62" r="6.5" fill="none" stroke="#E0E4E8" stroke-width="1" opacity=".4"/>
+    <!-- Mouthpiece -->
+    <path d="M55 54 L81 56.5 C84 57, 86 59, 86 62 C86 65, 84 67, 81 67.5 L55 70" fill="#B8C0CC" stroke="#9098A4" stroke-width="1.5"/>
+    <path d="M55 54 L81 56.5 C84 57, 86 59, 86 60 L55 57" fill="#D8E0E8" opacity=".3"/>
+    <!-- Chamber (chunky, nearly square) -->
+    <rect x="10" y="34" width="47" height="42" rx="5" fill="#C8D0D8" stroke="#9098A4" stroke-width="1.5"/>
+    <rect x="10" y="34" width="47" height="10" rx="5" fill="#DDE4EC" opacity=".22"/>
+    <rect x="10" y="64" width="47" height="12" rx="5" fill="#808890" opacity=".13"/>
     <!-- Air slot -->
-    <rect x="6" y="54" width="50" height="7" rx="3" fill="#3a4250" stroke="#2a3240" stroke-width=".5"/>
-    <rect x="8" y="55" width="46" height="2.5" rx="1" fill="#1a2030" opacity=".4"/>
+    <rect x="8" y="52" width="49" height="10" rx="3" fill="#2a3240" stroke="#1e2630" stroke-width=".8"/>
+    <rect x="10" y="53.5" width="45" height="3" rx="1.5" fill="#0e1420" opacity=".45"/>
     <!-- Googly eyes ON TOP -->
-    <circle cx="26" cy="34" r="10" fill="white" stroke="#ccc" stroke-width="1.5"/>
-    <circle cx="28.5" cy="34" r="6" fill="#1a1a1a"/>
-    <circle cx="30" cy="31.5" r="2.5" fill="white"/>
-    <circle cx="44" cy="34" r="10" fill="white" stroke="#ccc" stroke-width="1.5"/>
-    <circle cx="46.5" cy="34" r="6" fill="#1a1a1a"/>
-    <circle cx="48" cy="31.5" r="2.5" fill="white"/>
+    <circle cx="26" cy="27" r="11.5" fill="white" stroke="#c0c4c8" stroke-width="1.5"/>
+    <circle cx="29" cy="27" r="6.5" fill="#1a1a1a"/>
+    <circle cx="31" cy="24" r="2.8" fill="white"/>
+    <circle cx="46" cy="27" r="11.5" fill="white" stroke="#c0c4c8" stroke-width="1.5"/>
+    <circle cx="49" cy="27" r="6.5" fill="#1a1a1a"/>
+    <circle cx="51" cy="24" r="2.8" fill="white"/>
   </svg>`;
 }
 
