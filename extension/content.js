@@ -55,26 +55,31 @@ const PLATFORMS = {
 
 function whistleSVG(size = 40) {
   return `<svg class="pc-whistle-svg" width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- Ring -->
-    <circle cx="89" cy="62" r="6.5" fill="none" stroke="#B0B8C0" stroke-width="3"/>
-    <circle cx="89" cy="62" r="6.5" fill="none" stroke="#E0E4E8" stroke-width="1" opacity=".4"/>
-    <!-- Mouthpiece -->
-    <path d="M55 54 L81 56.5 C84 57, 86 59, 86 62 C86 65, 84 67, 81 67.5 L55 70" fill="#B8C0CC" stroke="#9098A4" stroke-width="1.5"/>
-    <path d="M55 54 L81 56.5 C84 57, 86 59, 86 60 L55 57" fill="#D8E0E8" opacity=".3"/>
-    <!-- Chamber (chunky, nearly square) -->
-    <rect x="10" y="34" width="47" height="42" rx="5" fill="#C8D0D8" stroke="#9098A4" stroke-width="1.5"/>
-    <rect x="10" y="34" width="47" height="10" rx="5" fill="#DDE4EC" opacity=".22"/>
-    <rect x="10" y="64" width="47" height="12" rx="5" fill="#808890" opacity=".13"/>
-    <!-- Air slot -->
-    <rect x="8" y="52" width="49" height="10" rx="3" fill="#2a3240" stroke="#1e2630" stroke-width=".8"/>
-    <rect x="10" y="53.5" width="45" height="3" rx="1.5" fill="#0e1420" opacity=".45"/>
-    <!-- Googly eyes ON TOP -->
-    <circle cx="26" cy="27" r="11.5" fill="white" stroke="#c0c4c8" stroke-width="1.5"/>
-    <circle cx="29" cy="27" r="6.5" fill="#1a1a1a"/>
-    <circle cx="31" cy="24" r="2.8" fill="white"/>
-    <circle cx="46" cy="27" r="11.5" fill="white" stroke="#c0c4c8" stroke-width="1.5"/>
-    <circle cx="49" cy="27" r="6.5" fill="#1a1a1a"/>
-    <circle cx="51" cy="24" r="2.8" fill="white"/>
+    <g transform="rotate(-12, 50, 50)">
+      <!-- Ring (upper right, connects via barrel) -->
+      <circle cx="74" cy="24" r="8" fill="none" stroke="#A8B4BC" stroke-width="3.5"/>
+      <circle cx="74" cy="24" r="8" fill="none" stroke="#D8E0E8" stroke-width="1.2" opacity=".4"/>
+      <!-- Barrel (connects upper body to ring) -->
+      <rect x="50" y="20" width="24" height="14" rx="4" fill="#B8C4D0" stroke="#9098A4" stroke-width="1.2"/>
+      <rect x="50" y="20" width="24" height="5" rx="3" fill="#D8E4EC" opacity=".3"/>
+      <!-- Upper body (mouthpiece area) -->
+      <rect x="15" y="22" width="40" height="20" rx="4" fill="#C4CED8" stroke="#9098A4" stroke-width="1.5"/>
+      <rect x="15" y="22" width="40" height="7" rx="4" fill="#DCE4EC" opacity=".3"/>
+      <!-- SLOT (dark horizontal gap — the defining feature) -->
+      <rect x="13" y="42" width="44" height="8" rx="2.5" fill="#28323E" stroke="#1c2430" stroke-width=".7"/>
+      <rect x="15" y="43.5" width="40" height="2.5" rx="1" fill="#0c1218" opacity=".5"/>
+      <!-- Lower chamber / air window (the big flat panel) -->
+      <rect x="11" y="50" width="48" height="36" rx="4" fill="#D0D8E2" stroke="#9098A4" stroke-width="1.5"/>
+      <rect x="11" y="50" width="48" height="8" rx="4" fill="#E0E8F0" opacity=".2"/>
+      <rect x="11" y="74" width="48" height="12" rx="4" fill="#9098A4" opacity=".1"/>
+      <!-- Googly eyes ON TOP of mouthpiece -->
+      <circle cx="28" cy="16" r="11" fill="white" stroke="#b8bcc0" stroke-width="1.5"/>
+      <circle cx="30.5" cy="16" r="6.5" fill="#1a1a1a"/>
+      <circle cx="32.5" cy="13" r="2.8" fill="white"/>
+      <circle cx="48" cy="16" r="11" fill="white" stroke="#b8bcc0" stroke-width="1.5"/>
+      <circle cx="50.5" cy="16" r="6.5" fill="#1a1a1a"/>
+      <circle cx="52.5" cy="13" r="2.8" fill="white"/>
+    </g>
   </svg>`;
 }
 
